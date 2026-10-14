@@ -1,0 +1,26 @@
+# One short request per GitHub Models chat model, with the workflow's own token (free tier, no key).
+# Status only (codes, messages, answer lengths) goes to branch out-ghmodels-probe.
+name: GitHub Models probe
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  models: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python probe_ghmodels.py
+      - name: Save status
+        if: always()
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          git checkout --orphan out-ghmodels-probe; git rm -rf --cached . > /dev/null; git add -f out
+          git commit -m "status"; git push -f origin out-ghmodels-probe
