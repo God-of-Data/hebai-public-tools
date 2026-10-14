@@ -36,16 +36,30 @@ if prov == "gemini":
               if "generateContent" in m.get("supportedGenerationMethods", [])]
     flash = sorted([m for m in models if "flash" in m and "lite" not in m and "image" not in m and "tts" not in m
                     and "live" not in m and "exp" not in m and "preview" not in m], reverse=True)
-    model = os.environ.get("MODEL") or (flash[0] if flash else models[0])
+    rotation = [m.strip() for m in (os.environ.get("MODEL") or "").split(",") if m.strip()] or ([flash[0]] if flash else [models[0]])
+    model = rotation[0]
     print("available flash models:", flash[:8], "-> using", model, flush=True)
     print(f"::notice::using {model}; flash models: {', '.join(flash[:6])}", flush=True)
     status_models = flash[:8]
 
     def ask(q):
-        j = post(f"https://generativelanguage.googleapis.com/v1beta/{model}:generateContent",
+        j = post(f"https://generativelanguage.googleapis.com/v1beta/{CUR['m']}:generateContent",
                  {"contents": [{"role": "user", "parts": [{"text": q}]}]}, H)
         return "".join(p.get("text", "") for p in j["candidates"][0]["content"]["parts"])
+    CUR = {"m": model, "k": 0}
+
+
+    def next_model(reason):
+        """switch to the next model in the rotation; False when none is left."""
+        status.setdefault("switched", []).append([CUR["m"], reason])
+        CUR["k"] += 1
+        if CUR["k"] >= len(rotation):
+            return False
+        CUR["m"] = rotation[CUR["k"]]
+        print(f"::notice::switching to {CUR['m']} ({reason})", flush=True)
+        return True
 else:
+    rotation, CUR = None, None
     key = os.environ.get("GROQ_API_KEY", "")
     if not key:
         sys.exit("GROQ_API_KEY secret is empty or missing")
@@ -81,7 +95,7 @@ for i, q in enumerate(reqs):
         break
     for k in range(5):
         try:
-            out.append({"i": i, "model": model, "answer": ask(q)})
+            out.append({"i": i, "model": CUR["m"] if CUR else model, "answer": ask(q)})
             status["done"].append(i)
             save_out()
             save_status()
@@ -100,9 +114,13 @@ for i, q in enumerate(reqs):
                 msg = ""
             msg = f"{msg} [quota {quota}]"
             if e.code == 429 and "PerDay" in quota:
+                if CUR and next_model("daily quota"):
+                    continue
                 status["daily_quota_hit"] = quota
                 save_status()
                 break
+            if e.code == 503 and k >= 2 and CUR and next_model("overloaded"):
+                continue
             status["errors"].append({"item": i, "code": e.code, "message": msg})
             print(f"::warning::item {i} HTTP {e.code}: {msg}", flush=True)   # annotation: readable through the API
             save_status()
