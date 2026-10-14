@@ -1,0 +1,23 @@
+# One-call check that the JEV_API_KEY secret reaches Jev (TypeSafe direct or OpenRouter). Manual only. No data sent.
+name: Jev access check
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - run: npm install --no-save @typesafe-ai/sdk
+      - run: node jev_check.mjs
+        env:
+          JEV_API_KEY: ${{ secrets.JEV_API_KEY }}
+      - if: always()
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          mkdir -p out; git checkout --orphan out-jev-check; git rm -rf --cached . > /dev/null; git add -f out
+          git commit --allow-empty -m "jev check"; git push -f origin out-jev-check
