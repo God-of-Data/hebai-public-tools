@@ -24,18 +24,19 @@ H = {"x-goog-api-key": key, "Content-Type": "application/json"}
 try:
     with urllib.request.urlopen(urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", headers=H), timeout=30) as f:
         models = [m["name"] for m in json.load(f)["models"] if "generateContent" in m.get("supportedGenerationMethods", [])]
-    st["models"] = [m for m in models if "flash" in m or "pro" in m][:30]
+    st["models"] = [m for m in models if "flash" in m or "pro" in m]
 except urllib.error.HTTPError as e:
     st["list_models_error"] = [e.code, e.read().decode()[:400]]
     done(1)
-model = os.environ.get("MODEL") or next((m for m in sorted(st["models"], reverse=True)
+LIST = [m.strip() for m in os.environ.get("MODEL", "").split(",") if m.strip()]
+model = (LIST[0] if LIST else "") or next((m for m in sorted(st["models"], reverse=True)
                                          if "lite" not in m and "preview" not in m and "exp" not in m and "image" not in m
                                          and "tts" not in m and "live" not in m), st["models"][0] if st["models"] else "")
 st["model"] = model
-REQS = int(os.environ.get("PROBE_N", "3"))
+REQS = 1 if LIST else int(os.environ.get("PROBE_N", "3"))   # a model list = 1 request each, to spare the daily quota
 body = json.dumps({"contents": [{"role": "user", "parts": [{"text": "כתוב משפט אחד על מזג האוויר."}]}]}).encode()
 st["calls"] = []
-cands = [m for m in st["models"] if not any(x in m for x in ("image", "tts", "live", "omni"))]
+cands = LIST or [m for m in st["models"] if not any(x in m for x in ("image", "tts", "live", "omni"))]
 for m in cands:
     for k in range(REQS):
         try:
@@ -47,6 +48,7 @@ for m in cands:
             err = json.loads(e.read().decode() or "{}").get("error", {})
             viol = [v for d in err.get("details", []) for v in d.get("violations", [])]
             retry = [d.get("retryDelay") for d in err.get("details", []) if d.get("retryDelay")]
-            st["calls"].append([m, k, e.code, [(v.get("quotaMetric", "").split("/")[-1], v.get("quotaId"), v.get("quotaValue")) for v in viol], retry])
+            st["calls"].append([m, k, e.code, [(v.get("quotaMetric", "").split("/")[-1], v.get("quotaId"), v.get("quotaValue")) for v in viol], retry,
+                                err.get("message", "")[:160]])
 st["ok"] = any(c[2] == "ok" for c in st["calls"])
 done(0)
