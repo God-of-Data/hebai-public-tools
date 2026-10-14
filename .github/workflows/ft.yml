@@ -1,0 +1,37 @@
+# Fine-tune DictaBERT-tiny (Fable #11, step 2). Encrypted inputs from branch ft-input; decrypted only inside the
+# runner (secret REQ_AGE_KEY). Outputs (per-item probabilities) encrypted to recipient.txt on branch out-ft.
+name: Fine-tune DictaBERT-tiny
+
+on:
+  workflow_dispatch:
+    inputs:
+      epochs: {description: "epochs", default: "2"}
+
+permissions:
+  contents: write
+
+jobs:
+  ft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [full, topic]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install transformers pyrage numpy
+      - run: |
+          git fetch -q origin ft-input && git checkout FETCH_HEAD -- ft
+          python ft_job.py --variant ${{ matrix.variant }} --epochs ${{ inputs.epochs }}
+        env:
+          REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
+      - name: Save
+        if: always()
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          mkdir -p out; B="out-ft-${{ matrix.variant }}"
+          git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
+          git commit --allow-empty -m "ft ${{ matrix.variant }}"; git push -f origin "$B"
