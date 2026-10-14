@@ -1,0 +1,161 @@
+{
+ "token_present": true,
+ "calls": [
+  [
+   "openai/gpt-5",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "openai/gpt-5-mini",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "openai/gpt-5-nano",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "openai/gpt-4.1",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "openai/gpt-4.1-mini",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "openai/gpt-4o",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "openai/gpt-4o-mini",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "openai/o4-mini",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "meta/Llama-4-Maverick-17B-128E-Instruct-FP8",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "meta/Meta-Llama-3.1-405B-Instruct",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "meta/Llama-3.3-70B-Instruct",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "mistral-ai/mistral-medium-2505",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "mistral-ai/mistral-small-2503",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "deepseek/DeepSeek-V3-0324",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "deepseek/DeepSeek-R1-0528",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "xai/grok-3",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "xai/grok-3-mini",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "microsoft/phi-4",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ],
+  [
+   "cohere/cohere-command-a",
+   "?",
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)",
+   {}
+  ]
+ ],
+ "catalog_raw_head": [
+  [
+   200,
+   "text/plain",
+   "OK\r\n"
+  ],
+  [
+   200,
+   "text/plain",
+   "OK\r\n"
+  ]
+ ],
+ "catalog_error": [
+  [
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)"
+  ],
+  [
+   "JSONDecodeError",
+   "Expecting value: line 1 column 1 (char 0)"
+  ]
+ ],
+ "ok": []
+}
