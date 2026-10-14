@@ -24,18 +24,27 @@ permissions:
 jobs:
   gen:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install pyrage
+      - name: Resume from earlier runs (indices only)
+        run: |
+          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}${{ inputs.probe == 'true' && '-probe' || '' }}"
+          if git fetch -q origin "$B" 2>/dev/null; then
+            git checkout FETCH_HEAD -- out 2>/dev/null || true
+            python -c "import json;print(json.dumps(json.load(open('out/status.json')).get('done',[])))" > prev_done.json 2>/dev/null || echo "[]" > prev_done.json
+          else echo "[]" > prev_done.json; fi
+          echo "already done: $(python -c "import json;print(len(json.load(open('prev_done.json'))))")"
       - env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MODEL: ${{ inputs.model }}
           LIMIT: ${{ inputs.limit }}
+          PAUSE: "13"
         run: if [ "${{ inputs.probe }}" = "true" ]; then timeout 120 python probe_api.py; else python gen_answers.py "${{ inputs.provider }}"; fi
       - name: Save ciphertext and status
         if: always()

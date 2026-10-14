@@ -58,21 +58,51 @@ else:
 
 out, fails, status = [], 0, {"provider": prov, "errors": []}
 os.makedirs("out", exist_ok=True)
+tag = prov.replace(":", "_").replace("/", "_")
+run_id = os.environ.get("GITHUB_RUN_ID", "local")
+done_idx = set(json.load(open("prev_done.json"))) if os.path.exists("prev_done.json") else set()
+status["done"] = sorted(done_idx)
+
+
+def save_out():
+    """Encrypted answers of THIS run (one file per run, so earlier runs' files are kept)."""
+    if out:
+        open(f"out/{tag}_{run_id}.jsonl.age", "wb").write(
+            encrypt("\n".join(json.dumps(r, ensure_ascii=False) for r in out).encode(), [recipient]))
 
 
 def save_status():
     """Plain status for debugging: model, counts, HTTP codes and the API's own error messages. Never any text."""
     json.dump(status, open("out/status.json", "w"), indent=1)
 for i, q in enumerate(reqs):
+    if i in done_idx:
+        continue
+    if status.get("daily_quota_hit"):
+        break
     for k in range(5):
         try:
             out.append({"i": i, "model": model, "answer": ask(q)})
+            status["done"].append(i)
+            save_out()
+            save_status()
             break
         except urllib.error.HTTPError as e:
+            retry_s, quota = None, ""
             try:
-                msg = json.loads(e.read().decode()).get("error", {}).get("message", "")[:300]
+                err = json.loads(e.read().decode()).get("error", {})
+                msg = err.get("message", "")[:200]
+                for d in err.get("details", []):
+                    if d.get("retryDelay"):
+                        retry_s = float(str(d["retryDelay"]).rstrip("s") or 0)
+                    for v in d.get("violations", []):
+                        quota = v.get("quotaId", "") or quota
             except Exception:  # noqa: BLE001
                 msg = ""
+            msg = f"{msg} [quota {quota}]"
+            if e.code == 429 and "PerDay" in quota:
+                status["daily_quota_hit"] = quota
+                save_status()
+                break
             status["errors"].append({"item": i, "code": e.code, "message": msg})
             print(f"::warning::item {i} HTTP {e.code}: {msg}", flush=True)   # annotation: readable through the API
             save_status()
@@ -80,7 +110,7 @@ for i, q in enumerate(reqs):
                 status["fatal"] = True
                 save_status()
                 sys.exit(f"HTTP {e.code}: {msg}")
-            wait = 20 * (k + 1) if e.code in (429, 500, 503) else 5
+            wait = (retry_s + 2) if retry_s else (20 * (k + 1) if e.code in (429, 500, 503) else 5)
             print(f"item {i}: HTTP {e.code}, retry in {wait}s", flush=True)
             time.sleep(wait)
         except Exception as e:  # noqa: BLE001
@@ -91,8 +121,7 @@ for i, q in enumerate(reqs):
     time.sleep(float(os.environ.get("PAUSE", "4")))
     if i % 25 == 0:
         print(f"{i + 1}/{len(reqs)} done, {fails} failed", flush=True)
-status.update({"model": model, "saved": len(out), "failed": fails})
+status.update({"model": model, "saved_this_run": len(out), "failed": fails, "total_done": len(status["done"])})
 save_status()
-tag = prov.replace(":", "_").replace("/", "_")
-open(f"out/{tag}.jsonl.age", "wb").write(encrypt("\n".join(json.dumps(r, ensure_ascii=False) for r in out).encode(), [recipient]))
+save_out()
 print(f"::notice::saved {len(out)} answers (encrypted), {fails} failed, model {model}")
