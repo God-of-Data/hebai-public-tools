@@ -3,6 +3,13 @@
 name: Generate encrypted answers
 
 on:
+  workflow_call:
+    inputs:
+      provider: {type: string, default: "gemini"}
+      model: {type: string, default: ""}
+      limit: {type: string, default: ""}
+      requests: {type: string, default: "own150.txt"}
+      probe: {type: string, default: "false"}
   workflow_dispatch:
     inputs:
       provider:

@@ -1,0 +1,19 @@
+# Daily Gemini free-tier collection for the training requests (20 requests/day per Flash model; quotas reset at
+# midnight Pacific ≈ 07:00 UTC). Resumes where the previous day stopped; does nothing once all requests are answered.
+name: Gemini daily
+
+on:
+  schedule:
+    - cron: "17 7 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  call:
+    uses: ./.github/workflows/gen.yml
+    with:
+      provider: gemini
+      model: models/gemini-3.5-flash,models/gemini-3.6-flash,models/gemini-3.7-flash,models/gemini-3.8-flash,models/gemini-3-flash-preview,models/gemini-flash-latest
+      requests: train300.txt
+    secrets: inherit
+    permissions:
+      contents: write
