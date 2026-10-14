@@ -13,7 +13,15 @@ from pyrage import encrypt, x25519
 
 prov = sys.argv[1]
 REQ_FILE = os.environ.get("REQ_FILE") or "requests/own150.txt"
-reqs = [l.strip() for l in open(REQ_FILE, encoding="utf-8") if l.strip()][:int(os.environ.get("LIMIT") or 10**6)]
+if REQ_FILE.endswith(".age"):   # encrypted requests (human-written questions): decrypted only inside the runner
+    from pyrage import decrypt
+    _k = os.environ.get("REQ_AGE_KEY", "").strip()
+    if not _k:
+        sys.exit("REQ_AGE_KEY secret missing: encrypted request file cannot be read")
+    _txt = decrypt(open(REQ_FILE, "rb").read(), [x25519.Identity.from_str(_k)]).decode("utf-8")
+else:
+    _txt = open(REQ_FILE, encoding="utf-8").read()
+reqs = [l.strip() for l in _txt.splitlines() if l.strip()][:int(os.environ.get("LIMIT") or 10**6)]
 recipient = x25519.Recipient.from_str(open("recipient.txt").read().strip())
 
 
@@ -80,6 +88,8 @@ else:
         body = {"model": model, "messages": [{"role": "user", "content": q}], "max_completion_tokens": 2000}
         if model.startswith("qwen/"):
             body["reasoning_effort"] = "none"   # answer directly, no hidden thinking eating the token-per-minute limit
+        elif model.startswith("openai/gpt-oss") and os.environ.get("REASONING"):
+            body["reasoning_effort"] = os.environ["REASONING"]   # "low" saves the daily token budget
         j = post("https://api.groq.com/openai/v1/chat/completions", body, H)
         return j["choices"][0]["message"]["content"]
 
