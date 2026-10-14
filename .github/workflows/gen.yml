@@ -14,6 +14,9 @@ on:
       limit:
         description: "only the first N requests (quick access test)"
         default: ""
+      probe:
+        description: "true = one request, no retries, report why it fails"
+        default: "false"
 
 permissions:
   contents: write
@@ -33,11 +36,11 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MODEL: ${{ inputs.model }}
           LIMIT: ${{ inputs.limit }}
-        run: python gen_answers.py "${{ inputs.provider }}"
+        run: if [ "${{ inputs.probe }}" = "true" ]; then timeout 120 python probe_api.py; else python gen_answers.py "${{ inputs.provider }}"; fi
       - name: Save ciphertext and status
         if: always()
         run: |
-          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}"
+          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}${{ inputs.probe == 'true' && '-probe' || '' }}"
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
           git commit -m "encrypted answers"; git push -f origin "$B"
