@@ -10,6 +10,7 @@ on:
       limit: {type: string, default: ""}
       requests: {type: string, default: "own150.txt"}
       probe: {type: string, default: "false"}
+      order: {type: string, default: "forward"}
   workflow_dispatch:
     inputs:
       provider:
@@ -27,6 +28,9 @@ on:
       probe:
         description: "true = one request, no retries, report why it fails"
         default: "false"
+      order:
+        description: "forward | reverse (start from the last request)"
+        default: "forward"
 
 permissions:
   contents: write
@@ -55,6 +59,7 @@ jobs:
           MODEL: ${{ inputs.model }}
           LIMIT: ${{ inputs.limit }}
           REQ_FILE: requests/${{ inputs.requests }}
+          ORDER: ${{ inputs.order }}
           PAUSE: ${{ startsWith(inputs.provider, 'groq') && '2' || '13' }}
         run: |
           if [ "${{ inputs.probe }}" = "true" ]; then timeout 120 python probe_api.py

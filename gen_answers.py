@@ -103,7 +103,10 @@ def save_out():
 def save_status():
     """Plain status for debugging: model, counts, HTTP codes and the API's own error messages. Never any text."""
     json.dump(status, open("out/status.json", "w"), indent=1)
-for i, q in enumerate(reqs):
+ORDER = list(enumerate(reqs))
+if os.environ.get("ORDER") == "reverse":   # a second model can start from the end while another works from the start
+    ORDER.reverse()
+for i, q in ORDER:
     if i in done_idx:
         continue
     if status.get("daily_quota_hit"):
