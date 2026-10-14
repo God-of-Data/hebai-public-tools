@@ -24,7 +24,7 @@ H = {"x-goog-api-key": key, "Content-Type": "application/json"}
 try:
     with urllib.request.urlopen(urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", headers=H), timeout=30) as f:
         models = [m["name"] for m in json.load(f)["models"] if "generateContent" in m.get("supportedGenerationMethods", [])]
-    st["models"] = [m for m in models if "flash" in m][:15]
+    st["models"] = [m for m in models if "flash" in m or "pro" in m][:30]
 except urllib.error.HTTPError as e:
     st["list_models_error"] = [e.code, e.read().decode()[:400]]
     done(1)
@@ -35,7 +35,8 @@ st["model"] = model
 REQS = int(os.environ.get("PROBE_N", "3"))
 body = json.dumps({"contents": [{"role": "user", "parts": [{"text": "כתוב משפט אחד על מזג האוויר."}]}]}).encode()
 st["calls"] = []
-for m in [model] + [x for x in ("models/gemini-3.5-flash", "models/gemini-3.1-flash-lite", "models/gemini-2.5-flash-lite") if x != model]:
+cands = [m for m in st["models"] if not any(x in m for x in ("image", "tts", "live", "omni"))]
+for m in cands:
     for k in range(REQS):
         try:
             with urllib.request.urlopen(urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/{m}:generateContent",
