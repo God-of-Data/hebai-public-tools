@@ -16,3 +16,21 @@ jobs:
     secrets: inherit
     permissions:
       contents: write
+  qa_pairs_train:
+    uses: ./.github/workflows/gen.yml
+    with:
+      provider: groq:openai/gpt-oss-20b
+      requests: qa_pairs_train.txt.age
+    secrets: inherit
+    permissions:
+      contents: write
+  qa_pairs_test:
+    needs: qa_pairs_train
+    if: always()
+    uses: ./.github/workflows/gen.yml
+    with:
+      provider: groq:openai/gpt-oss-20b
+      requests: qa_pairs_test.txt.age
+    secrets: inherit
+    permissions:
+      contents: write
