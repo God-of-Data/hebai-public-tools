@@ -1,0 +1,18 @@
+# Daily Groq free-tier collection for the training requests. gpt-oss-120b allows 200,000 tokens per day (about
+# 60-100 answers); the run stops when that limit is hit and the next day resumes where it stopped.
+name: Groq daily
+
+on:
+  schedule:
+    - cron: "23 19 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  call:
+    uses: ./.github/workflows/gen.yml
+    with:
+      provider: groq:openai/gpt-oss-120b
+      requests: train300.txt
+    secrets: inherit
+    permissions:
+      contents: write
