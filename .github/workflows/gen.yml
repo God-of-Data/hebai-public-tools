@@ -1,0 +1,38 @@
+# Generates answers to requests/own150.txt with a free-tier model and stores them ENCRYPTED (age) on branch out-<provider>.
+# Manual only. Keys come from repository secrets; nothing readable is written to the repo or the logs.
+name: Generate encrypted answers
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "gemini | groq:<model id>"
+        default: "gemini"
+      model:
+        description: "optional exact model name (Gemini: models/...)"
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyrage
+      - env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MODEL: ${{ inputs.model }}
+        run: python gen_answers.py "${{ inputs.provider }}"
+      - name: Save ciphertext
+        run: |
+          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')"
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
+          git commit -m "encrypted answers"; git push -f origin "$B"
