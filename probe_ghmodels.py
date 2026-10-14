@@ -26,6 +26,7 @@ try:
 except urllib.error.HTTPError as e:
     st["catalog_error"] = [e.code, e.read().decode(errors="replace")[:300]]
     save()
+    print("::warning::catalog error " + json.dumps(st["catalog_error"]), flush=True)
     sys.exit(1)
 st["catalog"] = [{k: m.get(k) for k in ("id", "publisher", "rate_limit_tier", "supported_output_modalities")} for m in cat]
 chat = [m for m in cat if "text" in (m.get("supported_output_modalities") or []) and "embed" not in m["id"]]
@@ -55,3 +56,6 @@ for m in chat:
 st["ok"] = [c[0] for c in st["calls"] if c[2] == "ok"]
 save()
 print("::notice::ok models: " + ", ".join(st["ok"])[:900])
+for c in st["calls"]:
+    if c[2] != "ok":
+        print(f"::warning::{c[0]} {c[2]} {str(c[3])[:150]}", flush=True)
