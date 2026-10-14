@@ -44,7 +44,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MODEL: ${{ inputs.model }}
           LIMIT: ${{ inputs.limit }}
-          PAUSE: "13"
+          PAUSE: ${{ startsWith(inputs.provider, 'groq') && '2' || '13' }}
         run: if [ "${{ inputs.probe }}" = "true" ]; then timeout 120 python probe_api.py; else python gen_answers.py "${{ inputs.provider }}"; fi
       - name: Save ciphertext and status
         if: always()
