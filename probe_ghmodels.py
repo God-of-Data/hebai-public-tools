@@ -23,8 +23,8 @@ def save():
 try:
     with urllib.request.urlopen(urllib.request.Request("https://models.github.ai/catalog/models", headers=H), timeout=30) as f:
         cat = json.load(f)
-except urllib.error.HTTPError as e:
-    st["catalog_error"] = [e.code, e.read().decode(errors="replace")[:300]]
+except Exception as e:  # noqa: BLE001
+    st["catalog_error"] = [getattr(e, "code", type(e).__name__), (e.read().decode(errors="replace") if hasattr(e, "read") else str(e))[:300]]
     save()
     print("::warning::catalog error " + json.dumps(st["catalog_error"]), flush=True)
     sys.exit(1)
