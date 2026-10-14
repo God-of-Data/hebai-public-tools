@@ -65,12 +65,20 @@ else:
         sys.exit("GROQ_API_KEY secret is empty or missing")
     model = prov.split(":", 1)[1]
     H = {"Authorization": f"Bearer {key}"}
+    try:
+        gm = sorted(m["id"] for m in get("https://api.groq.com/openai/v1/models", H)["data"])
+        print("::notice::groq models: " + ", ".join(gm)[:900], flush=True)
+        GROQ_MODELS = gm
+    except Exception as e:  # noqa: BLE001
+        GROQ_MODELS = [f"list failed: {e}"]
 
     def ask(q):
         j = post("https://api.groq.com/openai/v1/chat/completions", {"model": model, "messages": [{"role": "user", "content": q}]}, H)
         return j["choices"][0]["message"]["content"]
 
 out, fails, status = [], 0, {"provider": prov, "errors": []}
+if prov != "gemini":
+    status["groq_models"] = GROQ_MODELS
 os.makedirs("out", exist_ok=True)
 tag = prov.replace(":", "_").replace("/", "_")
 run_id = os.environ.get("GITHUB_RUN_ID", "local")
