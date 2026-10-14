@@ -76,7 +76,10 @@ else:
         GROQ_MODELS = [f"list failed: {e}"]
 
     def ask(q):
-        j = post("https://api.groq.com/openai/v1/chat/completions", {"model": model, "messages": [{"role": "user", "content": q}]}, H)
+        body = {"model": model, "messages": [{"role": "user", "content": q}], "max_completion_tokens": 2000}
+        if model.startswith("qwen/"):
+            body["reasoning_effort"] = "none"   # answer directly, no hidden thinking eating the token-per-minute limit
+        j = post("https://api.groq.com/openai/v1/chat/completions", body, H)
         return j["choices"][0]["message"]["content"]
 
 out, fails, status = [], 0, {"provider": prov, "errors": []}
