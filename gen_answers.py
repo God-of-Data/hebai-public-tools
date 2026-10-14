@@ -16,14 +16,17 @@ reqs = [l.strip() for l in open("requests/own150.txt", encoding="utf-8") if l.st
 recipient = x25519.Recipient.from_str(open("recipient.txt").read().strip())
 
 
+UA = "hebai-public-tools/1.0 (+https://github.com/God-of-Data/hebai-public-tools)"   # Cloudflare rejects the default urllib agent
+
+
 def post(url, body, headers):
-    r = urllib.request.Request(url, data=json.dumps(body).encode(), headers={"Content-Type": "application/json", **headers})
+    r = urllib.request.Request(url, data=json.dumps(body).encode(), headers={"Content-Type": "application/json", "User-Agent": UA, **headers})
     with urllib.request.urlopen(r, timeout=120) as f:
         return json.load(f)
 
 
 def get(url, headers):
-    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=60) as f:
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA, **headers}), timeout=60) as f:
         return json.load(f)
 
 
@@ -110,8 +113,9 @@ for i, q in enumerate(reqs):
             break
         except urllib.error.HTTPError as e:
             retry_s, quota = None, ""
+            raw_body = e.read().decode(errors="replace")
             try:
-                err = json.loads(e.read().decode()).get("error", {})
+                err = json.loads(raw_body).get("error", {})
                 msg = err.get("message", "")[:200]
                 for d in err.get("details", []):
                     if d.get("retryDelay"):
@@ -119,7 +123,7 @@ for i, q in enumerate(reqs):
                     for v in d.get("violations", []):
                         quota = v.get("quotaId", "") or quota
             except Exception:  # noqa: BLE001
-                msg = ""
+                msg = "non-JSON body: " + raw_body[:150]
             msg = f"{msg} [quota {quota}]"
             if e.code == 429 and "PerDay" in quota:
                 if CUR and next_model("daily quota"):
