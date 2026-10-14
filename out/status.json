@@ -1,0 +1,127 @@
+{
+ "key_present": true,
+ "models": [
+  "models/gemini-2.5-flash",
+  "models/gemini-2.5-pro",
+  "models/gemini-2.5-flash-preview-tts",
+  "models/gemini-2.5-pro-preview-tts",
+  "models/gemini-flash-latest",
+  "models/gemini-flash-lite-latest",
+  "models/gemini-pro-latest",
+  "models/gemini-2.5-flash-lite",
+  "models/gemini-2.5-flash-image",
+  "models/gemini-3-flash-preview",
+  "models/gemini-3.1-pro-preview",
+  "models/gemini-3.1-pro-preview-customtools",
+  "models/gemini-3.1-flash-lite-preview",
+  "models/gemini-3.1-flash-lite",
+  "models/gemini-3-pro-image-preview",
+  "models/gemini-3-pro-image",
+  "models/nano-banana-pro-preview",
+  "models/gemini-3.1-flash-image-preview",
+  "models/gemini-3.1-flash-image",
+  "models/gemini-3.1-flash-lite-image",
+  "models/gemini-3.5-flash",
+  "models/gemini-3.5-flash-lite",
+  "models/gemini-omni-flash-preview",
+  "models/gemini-omni-1.1-flash",
+  "models/gemini-3.6-flash",
+  "models/gemini-3.7-flash",
+  "models/gemini-3.8-flash",
+  "models/lyria-3-pro-preview",
+  "models/gemini-3.1-flash-tts-preview",
+  "models/gemini-3.8-flash-tts",
+  "models/gemini-3.8-flash-lite-tts",
+  "models/deep-research-pro-preview-12-2025"
+ ],
+ "model": "models/gemini-omni-flash-preview",
+ "calls": [
+  [
+   "models/gemini-omni-flash-preview",
+   0,
+   429,
+   [
+    [
+     "generate_content_free_tier_input_token_count",
+     "GenerateContentInputTokensPerModelPerMinute-FreeTier",
+     null
+    ],
+    [
+     "generate_content_free_tier_requests",
+     "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+     null
+    ],
+    [
+     "generate_content_free_tier_requests",
+     "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+     null
+    ]
+   ],
+   [
+    "22305s"
+   ],
+   "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/"
+  ],
+  [
+   "models/gemini-omni-1.1-flash",
+   0,
+   429,
+   [
+    [
+     "generate_content_free_tier_requests",
+     "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+     null
+    ],
+    [
+     "generate_content_free_tier_requests",
+     "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+     null
+    ],
+    [
+     "generate_content_free_tier_input_token_count",
+     "GenerateContentInputTokensPerModelPerMinute-FreeTier",
+     null
+    ]
+   ],
+   [
+    "22305s"
+   ],
+   "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/"
+  ],
+  [
+   "models/gemini-3.5-flash-lite",
+   0,
+   "ok",
+   63
+  ],
+  [
+   "models/gemini-3.1-flash-lite",
+   0,
+   503,
+   [],
+   [],
+   "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+  ],
+  [
+   "models/gemini-3.1-flash-lite-preview",
+   0,
+   "ok",
+   26
+  ],
+  [
+   "models/gemini-flash-lite-latest",
+   0,
+   "ok",
+   63
+  ],
+  [
+   "models/gemini-2.5-flash-lite",
+   0,
+   404,
+   [],
+   [],
+   "This model models/gemini-2.5-flash-lite is no longer available to new users. Please update your code to use models/gemini-3.5-flash-lite for the latest features"
+  ]
+ ],
+ "ok": true
+}
