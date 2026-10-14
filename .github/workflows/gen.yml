@@ -11,6 +11,9 @@ on:
       model:
         description: "optional exact model name (Gemini: models/...)"
         default: ""
+      limit:
+        description: "only the first N requests (quick access test)"
+        default: ""
 
 permissions:
   contents: write
@@ -29,10 +32,11 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MODEL: ${{ inputs.model }}
+          LIMIT: ${{ inputs.limit }}
         run: python gen_answers.py "${{ inputs.provider }}"
       - name: Save ciphertext
         run: |
-          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')"
+          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}"
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
           git commit -m "encrypted answers"; git push -f origin "$B"
