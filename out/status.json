@@ -1,0 +1,18 @@
+{
+ "key_present": true,
+ "attempts": [
+  {
+   "name": "typesafe-latest",
+   "ok": true,
+   "model": "jev-1.13.0",
+   "usage": {
+    "input_tokens": 347,
+    "output_tokens": 21
+   },
+   "answer": {
+    "type": "noul",
+    "noul": 0.23
+   }
+  }
+ ]
+}
