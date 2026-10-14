@@ -129,7 +129,7 @@ for i, q in enumerate(reqs):
             except Exception:  # noqa: BLE001
                 msg = "non-JSON body: " + raw_body[:150]
             msg = f"{msg} [quota {quota}]"
-            if e.code == 429 and "PerDay" in quota:
+            if e.code == 429 and ("PerDay" in quota or "per day" in raw_body.lower()):   # Gemini quotaId / Groq "tokens|requests per day"
                 if CUR and next_model("daily quota"):
                     continue
                 status["daily_quota_hit"] = quota
