@@ -1,0 +1,63 @@
+{
+ "provider": "gemini",
+ "errors": [
+  {
+   "item": 15,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later. [quota ]"
+  },
+  {
+   "item": 16,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later. [quota ]"
+  }
+ ],
+ "done": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14
+ ],
+ "switched": [
+  [
+   "models/gemini-3-flash-preview",
+   "daily quota"
+  ],
+  [
+   "models/gemini-3.7-flash",
+   "overloaded"
+  ],
+  [
+   "models/gemini-flash-latest",
+   "daily quota"
+  ],
+  [
+   "models/gemini-3.5-flash",
+   "overloaded"
+  ],
+  [
+   "models/gemini-3.6-flash",
+   "daily quota"
+  ],
+  [
+   "models/gemini-3.8-flash",
+   "daily quota"
+  ]
+ ],
+ "daily_quota_hit": "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+ "model": "models/gemini-3-flash-preview",
+ "saved_this_run": 15,
+ "failed": 1,
+ "total_done": 15
+}
