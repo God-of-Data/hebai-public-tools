@@ -34,7 +34,8 @@ jobs:
           MODEL: ${{ inputs.model }}
           LIMIT: ${{ inputs.limit }}
         run: python gen_answers.py "${{ inputs.provider }}"
-      - name: Save ciphertext
+      - name: Save ciphertext and status
+        if: always()
         run: |
           B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}"
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"

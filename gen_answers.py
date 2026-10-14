@@ -38,6 +38,7 @@ if prov == "gemini":
                     and "live" not in m and "exp" not in m and "preview" not in m], reverse=True)
     model = os.environ.get("MODEL") or (flash[0] if flash else models[0])
     print("available flash models:", flash[:8], "-> using", model, flush=True)
+    status_models = flash[:8]
 
     def ask(q):
         j = post(f"https://generativelanguage.googleapis.com/v1beta/{model}:generateContent",
@@ -54,13 +55,29 @@ else:
         j = post("https://api.groq.com/openai/v1/chat/completions", {"model": model, "messages": [{"role": "user", "content": q}]}, H)
         return j["choices"][0]["message"]["content"]
 
-out, fails = [], 0
+out, fails, status = [], 0, {"provider": prov, "errors": []}
+os.makedirs("out", exist_ok=True)
+
+
+def save_status():
+    """Plain status for debugging: model, counts, HTTP codes and the API's own error messages. Never any text."""
+    json.dump(status, open("out/status.json", "w"), indent=1)
 for i, q in enumerate(reqs):
     for k in range(6):
         try:
             out.append({"i": i, "model": model, "answer": ask(q)})
             break
         except urllib.error.HTTPError as e:
+            try:
+                msg = json.loads(e.read().decode()).get("error", {}).get("message", "")[:300]
+            except Exception:  # noqa: BLE001
+                msg = ""
+            status["errors"].append({"item": i, "code": e.code, "message": msg})
+            save_status()
+            if e.code in (400, 401, 403, 404):
+                status["fatal"] = True
+                save_status()
+                sys.exit(f"HTTP {e.code}: {msg}")
             wait = 15 * (k + 1) if e.code == 429 else 5
             print(f"item {i}: HTTP {e.code}, retry in {wait}s", flush=True)
             time.sleep(wait)
@@ -72,7 +89,8 @@ for i, q in enumerate(reqs):
     time.sleep(float(os.environ.get("PAUSE", "4")))
     if i % 25 == 0:
         print(f"{i + 1}/{len(reqs)} done, {fails} failed", flush=True)
-os.makedirs("out", exist_ok=True)
+status.update({"model": model, "saved": len(out), "failed": fails})
+save_status()
 tag = prov.replace(":", "_").replace("/", "_")
 open(f"out/{tag}.jsonl.age", "wb").write(encrypt("\n".join(json.dumps(r, ensure_ascii=False) for r in out).encode(), [recipient]))
 print(f"saved {len(out)} answers (encrypted), {fails} failed, model {model}")
