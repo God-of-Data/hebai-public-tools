@@ -1,0 +1,38 @@
+{
+ "provider": "gemini",
+ "errors": [
+  {
+   "item": 1,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+  },
+  {
+   "item": 1,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+  },
+  {
+   "item": 2,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+  },
+  {
+   "item": 2,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+  },
+  {
+   "item": 2,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+  },
+  {
+   "item": 2,
+   "code": 503,
+   "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+  }
+ ],
+ "model": "models/gemini-3.5-flash",
+ "saved": 2,
+ "failed": 1
+}
