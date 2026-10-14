@@ -76,7 +76,7 @@ for i, q in enumerate(reqs):
             status["errors"].append({"item": i, "code": e.code, "message": msg})
             print(f"::warning::item {i} HTTP {e.code}: {msg}", flush=True)   # annotation: readable through the API
             save_status()
-            if e.code in (400, 401, 403, 404):
+            if e.code in (400, 401, 402, 403, 404):
                 status["fatal"] = True
                 save_status()
                 sys.exit(f"HTTP {e.code}: {msg}")
