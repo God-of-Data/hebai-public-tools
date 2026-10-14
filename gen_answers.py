@@ -64,7 +64,7 @@ def save_status():
     """Plain status for debugging: model, counts, HTTP codes and the API's own error messages. Never any text."""
     json.dump(status, open("out/status.json", "w"), indent=1)
 for i, q in enumerate(reqs):
-    for k in range(6):
+    for k in range(4):
         try:
             out.append({"i": i, "model": model, "answer": ask(q)})
             break
