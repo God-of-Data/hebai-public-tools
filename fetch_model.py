@@ -19,7 +19,7 @@ ids = tok("שלום עולם", return_tensors="pt")
 torch.onnx.export(model, (ids["input_ids"], ids["attention_mask"]), os.path.join(out, "model.onnx"),
                   input_names=["input_ids", "attention_mask"], output_names=["logits"],
                   dynamic_axes={"input_ids": {0: "b", 1: "n"}, "attention_mask": {0: "b", 1: "n"}, "logits": {0: "b", 1: "n"}},
-                  opset_version=17)
+                  opset_version=17, dynamo=False)
 with torch.no_grad():
     ref = model(**ids).logits[0, 1, :5].tolist()
 open(os.path.join(out, "check.txt"), "w").write(f"{name}\nparams {sum(p.numel() for p in model.parameters())}\nlogits[0,1,:5] {ref}\n")
