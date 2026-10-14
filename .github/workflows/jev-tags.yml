@@ -1,0 +1,40 @@
+# Jev tagging run (Fable #12). Input: an age-encrypted jsonl on branch jev-input (public web + generated texts only);
+# decrypted only inside the runner (secret REQ_AGE_KEY); answers (ids, labels, numbers — no text) encrypted to
+# recipient.txt on branch out-jev-<name>. Manual only.
+name: Jev tags
+on:
+  workflow_dispatch:
+    inputs:
+      name: {description: "input file name under jev/ (without .jsonl.gz.age)", default: "pilot"}
+      max_input_tokens: {description: "hard budget guard", default: "40000000"}
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: npm install --no-save @typesafe-ai/sdk && pip install pyrage
+      - name: Decrypt input (runner only)
+        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
+        run: |
+          git fetch -q origin jev-input && git checkout FETCH_HEAD -- jev
+          python -c "import gzip,os;from pyrage import decrypt,x25519;k=x25519.Identity.from_str(os.environ['REQ_AGE_KEY'].strip());open('/tmp/in.jsonl','wb').write(gzip.decompress(decrypt(open('jev/${{ inputs.name }}.jsonl.gz.age','rb').read(),[k])))"
+      - run: node jev_tags.mjs /tmp/in.jsonl /tmp/answers.jsonl
+        env:
+          JEV_API_KEY: ${{ secrets.JEV_API_KEY }}
+          MAX_INPUT_TOKENS: ${{ inputs.max_input_tokens }}
+      - name: Encrypt and save
+        if: always()
+        run: |
+          mkdir -p out
+          python -c "import os;from pyrage import encrypt,x25519;r=x25519.Recipient.from_str(open('recipient.txt').read().split()[0]);d=open('/tmp/answers.jsonl','rb').read() if os.path.exists('/tmp/answers.jsonl') else b'';open('out/jev_${{ inputs.name }}.jsonl.age','wb').write(encrypt(d,[r]))"
+          rm -f /tmp/in.jsonl /tmp/answers.jsonl
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-jev-${{ inputs.name }}"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
+          git commit --allow-empty -m "jev ${{ inputs.name }}"; git push -f origin "$B"
