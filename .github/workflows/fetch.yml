@@ -1,0 +1,30 @@
+# Downloads a public model and publishes it (converted to ONNX) as a release. Manual only. No data in this repo.
+name: Fetch public model
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Hugging Face model id"
+        default: "dicta-il/dictabert-tiny"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install transformers onnx
+      - run: python fetch_model.py "${{ inputs.model }}"
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          N=$(basename "${{ inputs.model }}")
+          gh release delete "$N" -y --cleanup-tag || true
+          gh release create "$N" "dist/$N.tar.gz" --title "$N (ONNX)" --notes "Public model ${{ inputs.model }} exported to ONNX."
