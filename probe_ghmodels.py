@@ -20,16 +20,26 @@ def save():
     json.dump(st, open("out/status.json", "w"), indent=1)
 
 
-try:
-    with urllib.request.urlopen(urllib.request.Request("https://models.github.ai/catalog/models", headers=H), timeout=30) as f:
-        cat = json.load(f)
-except Exception as e:  # noqa: BLE001
-    st["catalog_error"] = [getattr(e, "code", type(e).__name__), (e.read().decode(errors="replace") if hasattr(e, "read") else str(e))[:300]]
-    save()
-    print("::warning::catalog error " + json.dumps(st["catalog_error"]), flush=True)
-    sys.exit(1)
-st["catalog"] = [{k: m.get(k) for k in ("id", "publisher", "rate_limit_tier", "supported_output_modalities")} for m in cat]
-chat = [m for m in cat if "text" in (m.get("supported_output_modalities") or []) and "embed" not in m["id"]]
+FALLBACK = ["openai/gpt-5", "openai/gpt-5-mini", "openai/gpt-5-nano", "openai/gpt-4.1", "openai/gpt-4.1-mini", "openai/gpt-4o",
+            "openai/gpt-4o-mini", "openai/o4-mini", "meta/Llama-4-Maverick-17B-128E-Instruct-FP8", "meta/Meta-Llama-3.1-405B-Instruct",
+            "meta/Llama-3.3-70B-Instruct", "mistral-ai/mistral-medium-2505", "mistral-ai/mistral-small-2503", "deepseek/DeepSeek-V3-0324",
+            "deepseek/DeepSeek-R1-0528", "xai/grok-3", "xai/grok-3-mini", "microsoft/phi-4", "cohere/cohere-command-a"]
+chat = []
+for hdrs in (H, {"User-Agent": UA, "Accept": "application/json"}):
+    try:
+        with urllib.request.urlopen(urllib.request.Request("https://models.github.ai/catalog/models", headers=hdrs), timeout=30) as f:
+            raw = f.read().decode(errors="replace")
+        st.setdefault("catalog_raw_head", []).append([f.status, f.headers.get("content-type"), raw[:200]])
+        cat = json.loads(raw)
+        st["catalog"] = [{k: m.get(k) for k in ("id", "publisher", "rate_limit_tier", "supported_output_modalities")} for m in cat]
+        chat = [{"id": m["id"], "rate_limit_tier": m.get("rate_limit_tier")} for m in cat
+                if "text" in (m.get("supported_output_modalities") or []) and "embed" not in m["id"]]
+        break
+    except Exception as e:  # noqa: BLE001
+        st.setdefault("catalog_error", []).append([getattr(e, "code", type(e).__name__), str(e)[:200]])
+if not chat:
+    chat = [{"id": m, "rate_limit_tier": "?"} for m in FALLBACK]
+save()
 body = json.dumps({"messages": [{"role": "user", "content": "כתוב משפט אחד על מזג האוויר."}], "max_tokens": 200})
 for m in chat:
     payload = json.loads(body)
