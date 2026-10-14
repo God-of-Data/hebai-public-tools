@@ -12,7 +12,8 @@ import urllib.request
 from pyrage import encrypt, x25519
 
 prov = sys.argv[1]
-reqs = [l.strip() for l in open("requests/own150.txt", encoding="utf-8") if l.strip()][:int(os.environ.get("LIMIT") or 10**6)]
+REQ_FILE = os.environ.get("REQ_FILE") or "requests/own150.txt"
+reqs = [l.strip() for l in open(REQ_FILE, encoding="utf-8") if l.strip()][:int(os.environ.get("LIMIT") or 10**6)]
 recipient = x25519.Recipient.from_str(open("recipient.txt").read().strip())
 
 

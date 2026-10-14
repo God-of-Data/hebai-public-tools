@@ -14,6 +14,9 @@ on:
       limit:
         description: "only the first N requests (quick access test)"
         default: ""
+      requests:
+        description: "request file under requests/ (default own150.txt); 'write' = let the model WRITE requests instead"
+        default: "own150.txt"
       probe:
         description: "true = one request, no retries, report why it fails"
         default: "false"
@@ -33,7 +36,7 @@ jobs:
       - run: pip install pyrage
       - name: Resume from earlier runs (indices only)
         run: |
-          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}${{ inputs.probe == 'true' && '-probe' || '' }}"
+          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}${{ inputs.probe == 'true' && '-probe' || '' }}${{ inputs.requests != 'own150.txt' && format('-{0}', inputs.requests) || '' }}"
           if git fetch -q origin "$B" 2>/dev/null; then
             git checkout FETCH_HEAD -- out 2>/dev/null || true
             python -c "import json;print(json.dumps(json.load(open('out/status.json')).get('done',[])))" > prev_done.json 2>/dev/null || echo "[]" > prev_done.json
@@ -44,12 +47,16 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MODEL: ${{ inputs.model }}
           LIMIT: ${{ inputs.limit }}
+          REQ_FILE: requests/${{ inputs.requests }}
           PAUSE: ${{ startsWith(inputs.provider, 'groq') && '2' || '13' }}
-        run: if [ "${{ inputs.probe }}" = "true" ]; then timeout 120 python probe_api.py; else python gen_answers.py "${{ inputs.provider }}"; fi
+        run: |
+          if [ "${{ inputs.probe }}" = "true" ]; then timeout 120 python probe_api.py
+          elif [ "${{ inputs.requests }}" = "write" ]; then python write_requests.py "$(echo '${{ inputs.provider }}' | cut -d: -f2)"
+          else python gen_answers.py "${{ inputs.provider }}"; fi
       - name: Save ciphertext and status
         if: always()
         run: |
-          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}${{ inputs.probe == 'true' && '-probe' || '' }}"
+          B="out-$(echo '${{ inputs.provider }}' | tr ':/' '__')${{ inputs.limit && '-test' || '' }}${{ inputs.probe == 'true' && '-probe' || '' }}${{ inputs.requests != 'own150.txt' && format('-{0}', inputs.requests) || '' }}"
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
           git commit -m "encrypted answers"; git push -f origin "$B"
