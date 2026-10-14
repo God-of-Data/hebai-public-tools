@@ -64,7 +64,7 @@ def save_status():
     """Plain status for debugging: model, counts, HTTP codes and the API's own error messages. Never any text."""
     json.dump(status, open("out/status.json", "w"), indent=1)
 for i, q in enumerate(reqs):
-    for k in range(4):
+    for k in range(5):
         try:
             out.append({"i": i, "model": model, "answer": ask(q)})
             break
@@ -80,7 +80,7 @@ for i, q in enumerate(reqs):
                 status["fatal"] = True
                 save_status()
                 sys.exit(f"HTTP {e.code}: {msg}")
-            wait = 10 * (k + 1) if e.code == 429 else 5
+            wait = 20 * (k + 1) if e.code in (429, 500, 503) else 5
             print(f"item {i}: HTTP {e.code}, retry in {wait}s", flush=True)
             time.sleep(wait)
         except Exception as e:  # noqa: BLE001
