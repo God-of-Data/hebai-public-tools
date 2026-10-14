@@ -38,6 +38,7 @@ if prov == "gemini":
                     and "live" not in m and "exp" not in m and "preview" not in m], reverse=True)
     model = os.environ.get("MODEL") or (flash[0] if flash else models[0])
     print("available flash models:", flash[:8], "-> using", model, flush=True)
+    print(f"::notice::using {model}; flash models: {', '.join(flash[:6])}", flush=True)
     status_models = flash[:8]
 
     def ask(q):
@@ -73,16 +74,17 @@ for i, q in enumerate(reqs):
             except Exception:  # noqa: BLE001
                 msg = ""
             status["errors"].append({"item": i, "code": e.code, "message": msg})
+            print(f"::warning::item {i} HTTP {e.code}: {msg}", flush=True)   # annotation: readable through the API
             save_status()
             if e.code in (400, 401, 403, 404):
                 status["fatal"] = True
                 save_status()
                 sys.exit(f"HTTP {e.code}: {msg}")
-            wait = 15 * (k + 1) if e.code == 429 else 5
+            wait = 10 * (k + 1) if e.code == 429 else 5
             print(f"item {i}: HTTP {e.code}, retry in {wait}s", flush=True)
             time.sleep(wait)
         except Exception as e:  # noqa: BLE001
-            print(f"item {i}: {type(e).__name__}", flush=True)
+            print(f"::warning::item {i}: {type(e).__name__}: {str(e)[:200]}", flush=True)
             time.sleep(5)
     else:
         fails += 1
@@ -93,4 +95,4 @@ status.update({"model": model, "saved": len(out), "failed": fails})
 save_status()
 tag = prov.replace(":", "_").replace("/", "_")
 open(f"out/{tag}.jsonl.age", "wb").write(encrypt("\n".join(json.dumps(r, ensure_ascii=False) for r in out).encode(), [recipient]))
-print(f"saved {len(out)} answers (encrypted), {fails} failed, model {model}")
+print(f"::notice::saved {len(out)} answers (encrypted), {fails} failed, model {model}")
