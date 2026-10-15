@@ -57,7 +57,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
-          REASONING: ${{ (contains(inputs.requests, 'qa_pairs') && startsWith(inputs.provider, 'groq:openai')) && 'low' || '' }}
+          REASONING: ${{ ((contains(inputs.requests, 'qa_pairs') || contains(inputs.requests, 'qa_casual')) && startsWith(inputs.provider, 'groq:openai')) && 'low' || '' }}
           MODEL: ${{ inputs.model }}
           LIMIT: ${{ inputs.limit }}
           REQ_FILE: requests/${{ inputs.requests }}
