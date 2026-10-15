@@ -1,0 +1,26 @@
+# Fresh #4 human test pages (Fable #22, 2026-10-16): FineWeb-2 heb_Hebr row groups the original pool never sampled,
+# test hosts only, full raw page text kept. Output is age-encrypted and attached to the release "fineweb-raw";
+# nothing readable is stored. Manual only.
+name: FineWeb fresh pages
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  part:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy: {fail-fast: false, matrix: {part: [0, 1, 2, 3]}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install huggingface_hub pyarrow fsspec pyrage
+      - run: python fineweb_raw_pages.py --fresh --part ${{ matrix.part }} --parts 4 --rg-per-file 6 --host-cap 40 --max-keep 20000 --max-minutes 130
+      - name: Upload encrypted files to the release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ls -la out/
+          gh release upload fineweb-raw out/* --clobber

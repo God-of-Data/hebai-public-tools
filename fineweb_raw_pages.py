@@ -135,6 +135,8 @@ def main():
     ap.add_argument("--host-cap", type=int, default=40)
     ap.add_argument("--max-keep", type=int, default=20000)
     ap.add_argument("--max-minutes", type=float, default=300)
+    ap.add_argument("--fresh", action="store_true", help="fresh #4 (2026-10-16): NEW row groups only (none the original "
+                    "pool sampled), test hosts only, raw pages saved; output tag fresh")
     ap.add_argument("--raw-test", action="store_true", help="test hosts only, raw_passage cut (structure kept)")
     a = ap.parse_args()
     from huggingface_hub import HfApi, HfFileSystem
@@ -163,6 +165,14 @@ def main():
         import random
         rnd = random.Random(1000 * a.part + files.index(fname))
         rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part]
+        if a.fresh:   # the original pool's row groups for every original part (8 parts, 15 per file) are excluded
+            used = set()
+            for op in range(8):
+                r0 = random.Random(1000 * op + files.index(fname))
+                cand = [g for g in range(pf.num_row_groups) if g % 8 == op]
+                used.update(r0.sample(cand, min(15, len(cand))))
+            rnd = random.Random(777000 + 1000 * a.part + files.index(fname))
+            rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):
             d = {c: b.column(c).to_pylist() for c in cols}
@@ -178,6 +188,8 @@ def main():
                     stats["excluded_" + ex] += 1
                     continue
                 h = host_of(url)
+                if a.fresh and not is_test_host(h):
+                    continue
                 key0 = str(d.get("id", [None] * len(d["text"]))[i] or url)
                 raw.write(json.dumps({"doc_id": key0, "url": url, "host": h, "date": date,
                                       "dump": d.get("dump", [""] * len(d["text"]))[i], "text": d["text"][i]},
@@ -221,8 +233,8 @@ def main():
     os.makedirs("out", exist_ok=True)
     for name, b in (("passages", buf), ("raw", raw)):
         data = gzip.compress(b.getvalue().encode("utf-8"))
-        open(f"out/fineweb_{name}_{a.part}.jsonl.gz.age", "wb").write(encrypt(data, [rcp]))
-    json.dump({"part": a.part, "stats": stats, "n_hosts": len(hosts)}, open(f"out/status_{a.part}.json", "w"), indent=1)
+        open(f"out/fineweb_{'fresh_' if a.fresh else ''}{name}_{a.part}.jsonl.gz.age", "wb").write(encrypt(data, [rcp]))
+    json.dump({"part": a.part, "stats": stats, "n_hosts": len(hosts)}, open(f"out/status_{'fresh_' if a.fresh else ''}{a.part}.json", "w"), indent=1)
     print("::notice::" + json.dumps(dict(stats))[:800], flush=True)
 
 
