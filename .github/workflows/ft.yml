@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       epochs: {description: "epochs", default: "2"}
+      variants: {description: "JSON list of variants", default: '["full"]'}
+      save_model: {description: "save encrypted weights to release ft-models", default: "1"}
 
 permissions:
   contents: write
@@ -17,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [full, topic]
+        variant: ${{ fromJSON(inputs.variants) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,9 +27,17 @@ jobs:
       - run: pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install transformers pyrage numpy
       - run: |
           git fetch -q origin ft-input && git checkout FETCH_HEAD -- ft
+          mkdir -p out_model
           python ft_job.py --variant ${{ matrix.variant }} --epochs ${{ inputs.epochs }}
         env:
           REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
+          SAVE_MODEL: ${{ inputs.save_model == '1' && '1' || '' }}
+      - name: Upload encrypted weights
+        if: ${{ inputs.save_model == '1' }}
+        env: {GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
+        run: |
+          gh release view ft-models >/dev/null 2>&1 || gh release create ft-models --title "Fine-tuned models (encrypted)" --notes "age-encrypted" || true
+          gh release upload ft-models out_model/* --clobber
       - name: Save
         if: always()
         run: |

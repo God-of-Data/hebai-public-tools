@@ -76,4 +76,11 @@ os.makedirs("out", exist_ok=True)
 rcp = x25519.Recipient.from_str(open("recipient.txt").read().split()[0])
 blob = "\n".join(json.dumps({"id": r["id"], "p": round(p, 6)}) for r, p in zip(ev, ps)).encode()
 open(f"out/ft_scores_{a.variant}.jsonl.age", "wb").write(encrypt(blob, [rcp]))
+if os.environ.get("SAVE_MODEL"):   # weights + tokenizer, encrypted to recipient.txt (uploaded to a release by the workflow)
+    import io, tarfile
+    md = f"/tmp/model_{a.variant}"; model.save_pretrained(md); tok.save_pretrained(md)
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+        tf.add(md, arcname=f"model_{a.variant}")
+    open(f"out_model/ft_model_{a.variant}.tar.gz.age" if os.path.isdir("out_model") else f"ft_model_{a.variant}.tar.gz.age", "wb").write(encrypt(buf.getvalue(), [rcp]))
 json.dump({"variant": a.variant, "steps": step, "minutes": round((time.time() - t0) / 60, 1)}, open(f"out/ft_status_{a.variant}.json", "w"))
