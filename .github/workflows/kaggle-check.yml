@@ -14,9 +14,12 @@ jobs:
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: |
           [ -n "$KAGGLE_USERNAME" ] && echo "::notice::username secret present" || echo "::error::KAGGLE_USERNAME missing"
-          [ -n "$KAGGLE_KEY" ] && echo "::notice::key secret present" || echo "::error::KAGGLE_KEY missing"
+          [ -n "$KAGGLE_KEY" ] && echo "::notice::KAGGLE_KEY present" || echo "::warning::KAGGLE_KEY missing"
+          [ -n "$KAGGLE_API_TOKEN" ] && echo "::notice::KAGGLE_API_TOKEN present" || true
+          [ -z "$KAGGLE_KEY" ] && unset KAGGLE_KEY; [ -z "$KAGGLE_API_TOKEN" ] && unset KAGGLE_API_TOKEN
           if kaggle kernels list --mine --page-size 5 > /tmp/k.txt 2>&1; then
             echo "::notice::Kaggle auth OK; own kernels listed: $(($(wc -l < /tmp/k.txt)-2))"
           else
