@@ -37,6 +37,21 @@ if mode == "check":
     json.dump(keep, open("out/openai_models.json", "w"), indent=1)
     print("::notice::key OK; models: " + ", ".join(keep)[:3000])
 
+elif mode == "probe":   # 3 own150 requests per model, synchronous; raw responses saved encrypted; prints usage only
+    key = x25519.Identity.from_str(os.environ["REQ_AGE_KEY"].strip())
+    qs = [l.strip() for l in open("requests/own150.txt", encoding="utf-8") if l.strip()][:3]
+    raws = []
+    for model in sys.argv[3].split(","):
+        for q in qs:
+            body = {"model": model, "messages": [{"role": "user", "content": q}], "max_completion_tokens": 1200}
+            if os.environ.get("REASONING"): body["reasoning_effort"] = os.environ["REASONING"]
+            r = call("POST", "/chat/completions", json.dumps(body).encode())
+            raws.append(r); u = r.get("usage", {})
+            print(f"::notice::{model}: finish {r['choices'][0]['finish_reason']} prompt {u.get('prompt_tokens')} "
+                  f"completion {u.get('completion_tokens')} reasoning {(u.get('completion_tokens_details') or {}).get('reasoning_tokens')} "
+                  f"words {len((r['choices'][0]['message'].get('content') or '').split())}")
+    enc(f"openai_probe_{sys.argv[2]}.jsonl.age", "\n".join(json.dumps(r, ensure_ascii=False) for r in raws).encode())
+
 elif mode == "submit":
     tag, model, sets = sys.argv[2], sys.argv[3], sys.argv[4].split(",")
     maxtok = int(sys.argv[5]) if len(sys.argv) > 5 else 1200
