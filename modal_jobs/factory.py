@@ -24,7 +24,7 @@ image = (modal.Image.debian_slim(python_version="3.11")
 secret = modal.Secret.from_dict({"REQ_AGE_KEY": os.environ.get("REQ_AGE_KEY", "")})
 
 
-def gen(model_id: str, files: dict, recipient: str, family: str) -> bytes:
+def _gen(model_id: str, files: dict, recipient: str, family: str) -> bytes:
     import json, time
     from pyrage import decrypt, encrypt, x25519
     from vllm import LLM, SamplingParams
@@ -51,8 +51,17 @@ def gen(model_id: str, files: dict, recipient: str, family: str) -> bytes:
     return encrypt("\n".join(json.dumps(r, ensure_ascii=False) for r in rows).encode(), [rcp])
 
 
-fns = {g: app.function(gpu=g, image=image, timeout=75 * 60, secrets=[secret], memory=32768, serialized=True,
-                       name=f"gen_{g.lower()}")(gen) for g in sorted({v[1] for v in FAMILIES.values()})}
+@app.function(gpu="L4", image=image, timeout=75 * 60, secrets=[secret], memory=32768)
+def gen_l4(model_id: str, files: dict, recipient: str, family: str) -> bytes:
+    return _gen(model_id, files, recipient, family)
+
+
+@app.function(gpu="L40S", image=image, timeout=75 * 60, secrets=[secret], memory=32768)
+def gen_l40s(model_id: str, files: dict, recipient: str, family: str) -> bytes:
+    return _gen(model_id, files, recipient, family)
+
+
+fns = {"L4": gen_l4, "L40S": gen_l40s}
 
 
 @app.local_entrypoint()
