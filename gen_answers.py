@@ -53,6 +53,7 @@ if prov == "gemini":
     print("available flash models:", flash[:8], "-> using", model, flush=True)
     print(f"::notice::using {model}; flash models: {', '.join(flash[:6])}", flush=True)
     status_models = flash[:8]
+    print("::notice::gemma models: " + ", ".join(m for m in models if "gemma" in m), flush=True)
 
     def ask(q):
         j = post(f"https://generativelanguage.googleapis.com/v1beta/{CUR['m']}:generateContent",
