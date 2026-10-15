@@ -1,0 +1,38 @@
+# GPU jobs on Modal. job=check: verifies the Modal token only. job=bino: Binoculars (modal_jobs/bino.py) on encrypted
+# input from branch bino-input; the decryption key is passed for this run only; encrypted scores -> branch out-modal-bino.
+name: Modal run
+on:
+  workflow_dispatch:
+    inputs:
+      job: {description: "check | bino", default: "check"}
+      limit: {description: "max texts (bino)", default: "5000"}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -q modal
+      - name: Check token
+        run: |
+          [ -n "$MODAL_TOKEN_ID" ] && echo "::notice::MODAL_TOKEN_ID present" || echo "::error::MODAL_TOKEN_ID missing"
+          [ -n "$MODAL_TOKEN_SECRET" ] && echo "::notice::MODAL_TOKEN_SECRET present" || echo "::error::MODAL_TOKEN_SECRET missing"
+          if modal app list > /tmp/a.txt 2>&1; then echo "::notice::Modal auth OK"; else echo "::error::Modal auth failed: $(head -c 200 /tmp/a.txt)"; exit 1; fi
+      - name: Binoculars
+        if: ${{ inputs.job == 'bino' }}
+        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
+        run: |
+          git fetch -q origin bino-input && git checkout FETCH_HEAD -- bino
+          modal run modal_jobs/bino.py --limit ${{ inputs.limit }}
+      - name: Save (encrypted)
+        if: ${{ inputs.job == 'bino' && always() }}
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          mkdir -p out; B="out-modal-bino"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f out; git commit --allow-empty -m "modal bino"; git push -f origin "$B"
