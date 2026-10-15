@@ -29,7 +29,9 @@ jobs:
         env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
         run: |
           git fetch -q origin bino-input && git checkout FETCH_HEAD -- bino
-          modal run modal_jobs/bino.py --limit ${{ inputs.limit }}
+          set -o pipefail
+          modal run modal_jobs/bino.py --limit ${{ inputs.limit }} 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
+          grep -E "^texts|models loaded|saved" /tmp/m.txt | sed 's/^/::notice::/' || true
       - name: Save (encrypted)
         if: ${{ inputs.job == 'bino' && always() }}
         run: |
