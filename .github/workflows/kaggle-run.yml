@@ -1,0 +1,50 @@
+# Runs a job on Kaggle (free GPU) with encrypted inputs only. A private dataset <user>/hebai-inputs holds *.age files (and
+# recipient.txt); a private kernel <user>/hebai-<job> runs kaggle/job_<job>.py, reads secret REQ_AGE_KEY from the Kaggle
+# account (Add-ons -> Secrets), and writes encrypted outputs. Outputs are committed to branch out-kaggle-<job>.
+name: Kaggle run
+on:
+  workflow_dispatch:
+    inputs:
+      job: {description: "check | ft | bino", default: "check"}
+      inputs_branch: {description: "branch with encrypted inputs (dir ft/)", default: "ft-input"}
+      wait_minutes: {description: "max minutes to wait for the kernel", default: "60"}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q kaggle
+      - name: Dataset (encrypted inputs only)
+        run: |
+          mkdir -p ds && git fetch -q origin ${{ inputs.inputs_branch }} && git archive FETCH_HEAD ft | tar -x -C ds
+          find ds -type f ! -name "*.age" -delete; cp recipient.txt ds/
+          echo "{\"title\":\"hebai-inputs\",\"id\":\"$KAGGLE_USERNAME/hebai-inputs\",\"licenses\":[{\"name\":\"other\"}],\"isPrivate\":true}" > ds/dataset-metadata.json
+          ls ds/ft | head; du -sh ds
+          kaggle datasets version -p ds -m "update" --dir-mode zip -q 2>/tmp/e || kaggle datasets create -p ds --dir-mode zip -q || (head -c 300 /tmp/e; exit 1)
+          sleep 60
+      - name: Kernel
+        run: |
+          J="${{ inputs.job }}"; mkdir -p kn && cp kaggle/job_$J.py kn/job.py
+          echo "{\"id\":\"$KAGGLE_USERNAME/hebai-$J\",\"title\":\"hebai-$J\",\"code_file\":\"job.py\",\"language\":\"python\",\"kernel_type\":\"script\",\"is_private\":true,\"enable_gpu\":true,\"enable_internet\":true,\"dataset_sources\":[\"$KAGGLE_USERNAME/hebai-inputs\"],\"competition_sources\":[],\"kernel_sources\":[]}" > kn/kernel-metadata.json
+          kaggle kernels push -p kn
+          for i in $(seq 1 $(( ${{ inputs.wait_minutes }} * 2 ))); do
+            s=$(kaggle kernels status "$KAGGLE_USERNAME/hebai-$J" 2>&1 | tail -1); echo "$s" | sed "s/$KAGGLE_USERNAME/<user>/g"
+            echo "$s" | grep -qiE "complete|error|cancel" && break; sleep 30
+          done
+          mkdir -p out && kaggle kernels output "$KAGGLE_USERNAME/hebai-$J" -p out -q || true
+          find out -name "*.log" -delete; ls -la out
+          [ -f out/status.json ] && echo "::notice::$(cat out/status.json)"
+      - name: Save (encrypted outputs + non-secret status)
+        if: always()
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-kaggle-${{ inputs.job }}"; mkdir -p out; find out -type f ! -name "*.age" ! -name "status.json" -delete
+          git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
+          git commit --allow-empty -m "kaggle ${{ inputs.job }}"; git push -f origin "$B"
