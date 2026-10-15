@@ -1,7 +1,7 @@
 """Family factory (Fable #22): open-weight chat models write answers to the SAME request sets on a Modal GPU (vLLM).
 Encrypted request files (*.txt.age) are decrypted only inside the container with REQ_AGE_KEY (passed for this run only);
 answers are encrypted to recipient.txt inside the container. Decoding (pre-registered): each model's own chat template;
-70% of requests at temperature 0.7, 30% at 1.0 (fixed by request hash); top_p 0.95; max 700 new tokens.
+70% of requests at temperature 0.7, 30% at 1.0 (fixed by request hash); top_p 0.95; max 1100 new tokens.
 usage (GitHub Actions): modal run modal_jobs/factory.py --family llama"""
 import hashlib, os
 import modal
@@ -39,7 +39,7 @@ def _gen(model_id: str, files: dict, recipient: str, family: str) -> bytes:
     llm = LLM(model=model_id, max_model_len=4096, gpu_memory_utilization=0.90, trust_remote_code=True)
     print(f"model loaded {time.time() - t0:.0f}s", flush=True)
     temp = lambda s, i: 1.0 if int(hashlib.sha1(f"{s}|{i}".encode()).hexdigest(), 16) % 10 >= 7 else 0.7
-    sps = [SamplingParams(temperature=temp(s, i), top_p=0.95, max_tokens=700, seed=i) for s, i, _ in reqs]
+    sps = [SamplingParams(temperature=temp(s, i), top_p=0.95, max_tokens=1100, seed=i) for s, i, _ in reqs]
     outs = llm.chat([[{"role": "user", "content": q}] for _, _, q in reqs], sps, use_tqdm=False)
     rows = []
     for (s, i, _), o in zip(reqs, outs):
