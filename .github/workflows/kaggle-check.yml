@@ -1,0 +1,25 @@
+# Kaggle connection check: authenticates with secrets KAGGLE_USERNAME / KAGGLE_KEY and prints only non-secret facts
+# (whether auth works, how many own kernels/datasets exist). Manual only.
+name: Kaggle check
+on: {workflow_dispatch: {}}
+permissions: {contents: read}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q kaggle
+      - name: Check
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          [ -n "$KAGGLE_USERNAME" ] && echo "::notice::username secret present" || echo "::error::KAGGLE_USERNAME missing"
+          [ -n "$KAGGLE_KEY" ] && echo "::notice::key secret present" || echo "::error::KAGGLE_KEY missing"
+          if kaggle kernels list --mine --page-size 5 > /tmp/k.txt 2>&1; then
+            echo "::notice::Kaggle auth OK; own kernels listed: $(($(wc -l < /tmp/k.txt)-2))"
+          else
+            echo "::error::Kaggle auth failed: $(head -c 200 /tmp/k.txt | sed "s/$KAGGLE_USERNAME/<user>/g")"; exit 1
+          fi
+          kaggle datasets list --mine > /tmp/d.txt 2>&1 && echo "::notice::own datasets listed: $(($(wc -l < /tmp/d.txt)-2))" || true
