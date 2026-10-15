@@ -1,4 +1,4 @@
-# Daily Gemini free-tier collection for the training requests (20 requests/day per Flash model; quotas reset at
+# Daily Gemini free-tier collection (now: the experiment-1 paired questions; train300 is complete) (20 requests/day per Flash model; quotas reset at
 # midnight Pacific ≈ 07:00 UTC). Resumes where the previous day stopped; does nothing once all requests are answered.
 name: Gemini daily
 
@@ -13,7 +13,7 @@ jobs:
     with:
       provider: gemini
       model: models/gemini-3.5-flash,models/gemini-3.6-flash,models/gemini-3.7-flash,models/gemini-3.8-flash,models/gemini-3-flash-preview,models/gemini-flash-latest,models/gemini-3.5-flash-lite,models/gemini-3.1-flash-lite-preview,models/gemini-3.1-flash-lite,models/gemini-flash-lite-latest
-      requests: train300.txt
+      requests: qa_pairs_train.txt.age
     secrets: inherit
     permissions:
       contents: write
