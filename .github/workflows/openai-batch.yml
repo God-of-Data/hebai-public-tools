@@ -1,0 +1,41 @@
+# ChatGPT family via the OpenAI Batch API (owner, 2026-10-16; project budget $5). check = list models (no content);
+# submit = start a batch from our own request files; fetch = download RAW output. Everything with content is
+# age-encrypted -> branch out-openai-<tag> (earlier files on that branch are kept). Manual only.
+name: OpenAI batch
+on:
+  workflow_dispatch:
+    inputs:
+      mode: {description: "check | submit | fetch", default: "check"}
+      tag: {description: "batch tag", default: "check"}
+      model: {description: "model id (submit)", default: ""}
+      sets: {description: "comma-separated request sets (submit)", default: ""}
+      max_tokens: {description: "max_completion_tokens", default: "1200"}
+      reasoning: {description: "reasoning_effort (empty = model default)", default: ""}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
+      REASONING: ${{ inputs.reasoning }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -q pyrage
+      - name: Restore earlier files of this tag
+        run: |
+          mkdir -p out state
+          if git fetch -q origin "out-openai-${{ inputs.tag }}" 2>/dev/null; then
+            git checkout FETCH_HEAD -- out 2>/dev/null || true; cp out/openai_batch_*.json state/ 2>/dev/null || true
+          fi
+      - run: python openai_batch.py ${{ inputs.mode }} ${{ inputs.tag }} ${{ inputs.model }} ${{ inputs.sets }} ${{ inputs.max_tokens }}
+      - name: Save
+        if: always()
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-openai-${{ inputs.tag }}"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f out; git commit --allow-empty -m "openai ${{ inputs.mode }} ${{ inputs.tag }}"; git push -f origin "$B"
