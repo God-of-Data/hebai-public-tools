@@ -1,0 +1,128 @@
+{
+ "provider": "groq:qwen/qwen3.8-27b",
+ "errors": [
+  {
+   "item": 0,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 599, Requested 515. Pleas [quota ]"
+  },
+  {
+   "item": 13,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 15,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 17,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 20,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 26,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 29,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1040. The request's e [quota ]"
+  },
+  {
+   "item": 32,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1977. The request's e [quota ]"
+  },
+  {
+   "item": 32,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 32,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 36,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1011. The request's e [quota ]"
+  },
+  {
+   "item": 125,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 2000. The request's e [quota ]"
+  },
+  {
+   "item": 126,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1912. The request's e [quota ]"
+  },
+  {
+   "item": 129,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1952. The request's e [quota ]"
+  },
+  {
+   "item": 129,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1064. The request's e [quota ]"
+  },
+  {
+   "item": 130,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 2000. The request's e [quota ]"
+  },
+  {
+   "item": 136,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1215. The request's e [quota ]"
+  },
+  {
+   "item": 148,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1215. The request's e [quota ]"
+  },
+  {
+   "item": 158,
+   "code": 429,
+   "message": "Request too large for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 2000. The request's e [quota ]"
+  }
+ ],
+ "groq_models": [
+  "allam-2-7b",
+  "canopylabs/orpheus-arabic-saudi",
+  "canopylabs/orpheus-v1-english",
+  "meta-llama/llama-prompt-guard-2-22m",
+  "meta-llama/llama-prompt-guard-2-86m",
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-safeguard-20b",
+  "qwen/qwen3.8-27b",
+  "whisper-large-v3",
+  "whisper-large-v3-turbo"
+ ],
+ "done": [
+  0,
+  11,
+  24,
+  33,
+  69,
+  112,
+  133,
+  151
+ ],
+ "daily_quota_hit": "",
+ "model": "qwen/qwen3.8-27b",
+ "saved_this_run": 8,
+ "failed": 0,
+ "total_done": 8
+}
