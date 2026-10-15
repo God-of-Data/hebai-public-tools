@@ -2,7 +2,9 @@
 (ft/train.jsonl.gz.age, ft/eval.jsonl.gz.age on branch ft-input; decrypted here with secret REQ_AGE_KEY). Variant
 "topic" replaces every word outside the 2,000 most frequent TRAINING words with [MASK] in train and eval alike (the
 topic-masked control). Output: per-eval-item AI probability, encrypted to recipient.txt -> out/ft_scores_<variant>.jsonl.age
-usage: python ft_job.py --variant full|topic"""
+Variant "cv" trains on the 80% of split groups with cvdev == 0 and also scores the held-out 20% of TRAINING records
+(out/ft_dev_cv.jsonl.age), used to calibrate the second opinion on training data only (Fable #14).
+usage: python ft_job.py --variant full|topic|cv"""
 import argparse, collections, gzip, json, os, random, sys, time
 import numpy as np
 import torch
@@ -31,6 +33,10 @@ if a.variant == "topic":
 tok = AutoTokenizer.from_pretrained(a.model)
 model = AutoModelForSequenceClassification.from_pretrained(a.model, num_labels=2)
 print("params", sum(p.numel() for p in model.parameters()), flush=True)
+cvd = []
+if a.variant == "cv":
+    cvd = [r for r in train if r.get("cvdev")]; train = [r for r in train if not r.get("cvdev")]
+    print("cv: train", len(train), "held-out", len(cvd), flush=True)
 # 5% of split groups held out to watch training (never the eval sets)
 groups = sorted({r["group"] for r in train}); random.shuffle(groups); dev_g = set(groups[: len(groups) // 20])
 tr = [r for r in train if r["group"] not in dev_g]; dev = [r for r in train if r["group"] in dev_g]
@@ -76,6 +82,10 @@ os.makedirs("out", exist_ok=True)
 rcp = x25519.Recipient.from_str(open("recipient.txt").read().split()[0])
 blob = "\n".join(json.dumps({"id": r["id"], "p": round(p, 6)}) for r, p in zip(ev, ps)).encode()
 open(f"out/ft_scores_{a.variant}.jsonl.age", "wb").write(encrypt(blob, [rcp]))
+if cvd:
+    pc = predict(cvd)
+    blob = "\n".join(json.dumps({"id": r["id"], "p": round(p, 6)}) for r, p in zip(cvd, pc)).encode()
+    open("out/ft_dev_cv.jsonl.age", "wb").write(encrypt(blob, [rcp]))
 if os.environ.get("SAVE_MODEL"):   # weights + tokenizer, encrypted to recipient.txt (uploaded to a release by the workflow)
     import io, tarfile
     md = f"/tmp/model_{a.variant}"; model.save_pretrained(md); tok.save_pretrained(md)
