@@ -9,7 +9,7 @@ jobs:
   gen:
     runs-on: ubuntu-latest
     timeout-minutes: 100
-    strategy: {fail-fast: false, matrix: {family: "${{ fromJSON(inputs.families) }}"}}
+    strategy: {fail-fast: false, max-parallel: 2, matrix: {family: "${{ fromJSON(inputs.families) }}"}}
     env:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
