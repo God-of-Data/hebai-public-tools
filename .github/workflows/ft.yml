@@ -8,6 +8,7 @@ on:
       epochs: {description: "epochs", default: "2"}
       variants: {description: "JSON list of variants", default: '["full"]'}
       save_model: {description: "save encrypted weights to release ft-models", default: "1"}
+      tag: {description: "suffix for the weight file names (keeps earlier weights)", default: ""}
 
 permissions:
   contents: write
@@ -37,6 +38,7 @@ jobs:
         env: {GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
         run: |
           gh release view ft-models >/dev/null 2>&1 || gh release create ft-models --title "Fine-tuned models (encrypted)" --notes "age-encrypted" || true
+          T="${{ inputs.tag }}"; if [ -n "$T" ]; then for f in out_model/*.tar.gz.age; do mv "$f" "${f%.tar.gz.age}_$T.tar.gz.age"; done; fi
           gh release upload ft-models out_model/* --clobber
       - name: Save
         if: always()
