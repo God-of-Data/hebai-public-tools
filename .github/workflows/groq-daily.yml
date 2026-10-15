@@ -12,7 +12,7 @@ jobs:
     uses: ./.github/workflows/gen.yml
     with:
       provider: groq:openai/gpt-oss-120b
-      requests: train300.txt
+      requests: qa_pairs_test.txt.age   # train300 is covered (120b 0..96 + 20b 78..299)
     secrets: inherit
     permissions:
       contents: write
