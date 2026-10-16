@@ -218,7 +218,14 @@ def main():
                     c10 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap10]
                     add10.update(r10.sample(c10, min(6, len(c10))))
                 used |= add10
-            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000, 8: 1222000, 9: 1333000, 10: 1444000, 11: 1555000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
+            if a.fresh_round >= 12:   # round 11 (H2 struct cells) used seed 1555000, 24 row groups per part (same 'used' as then)
+                snap11, add11 = set(used), set()
+                for op in range(4):
+                    r11 = random.Random(1555000 + 1000 * op + files.index(fname))
+                    c11 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap11]
+                    add11.update(r11.sample(c11, min(24, len(c11))))
+                used |= add11
+            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000, 8: 1222000, 9: 1333000, 10: 1444000, 11: 1555000, 12: 1666000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
             rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):
