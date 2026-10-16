@@ -1,0 +1,40 @@
+# Gemini paid run via the Gemini Batch API (owner, 2026-10-16; prepaid credit). models | probe | submit | fetch. Everything with content is
+# age-encrypted -> branch out-gemini-paid-<tag> (earlier files on that branch are kept). Manual only.
+name: Gemini batch
+on:
+  workflow_dispatch:
+    inputs:
+      mode: {description: "models | probe | submit | fetch", default: "models"}
+      tag: {description: "batch tag", default: "check"}
+      model: {description: "model id (submit)", default: ""}
+      sets: {description: "comma-separated request sets (submit)", default: ""}
+      max_tokens: {description: "max_completion_tokens", default: "1200"}
+      reasoning: {description: "thinkingLevel (empty = model default)", default: ""}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_PAID_API_KEY: ${{ secrets.GEMINI_PAID_API_KEY }}
+      REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
+      THINKING: ${{ inputs.reasoning }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -q pyrage
+      - name: Restore earlier files of this tag
+        run: |
+          mkdir -p out state
+          if git fetch -q origin "out-gemini-paid-${{ inputs.tag }}" 2>/dev/null; then
+            git checkout FETCH_HEAD -- out 2>/dev/null || true; cp out/gemini_batch_*.json state/ 2>/dev/null || true
+          fi
+      - run: python gemini_batch.py ${{ inputs.mode }} ${{ inputs.tag }} ${{ inputs.model }} ${{ inputs.sets }} ${{ inputs.max_tokens }}
+      - name: Save
+        if: always()
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-gemini-paid-${{ inputs.tag }}"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f out; git commit --allow-empty -m "gemini ${{ inputs.mode }} ${{ inputs.tag }}"; git push -f origin "$B"
