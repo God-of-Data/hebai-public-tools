@@ -19,6 +19,7 @@ def run(bundle: bytes, variant: str, epochs: str, model: str = "dicta-il/dictabe
     d = tempfile.mkdtemp(); tarfile.open(fileobj=io.BytesIO(bundle)).extractall(d)
     os.makedirs(f"{d}/out_model", exist_ok=True)
     extra = ["--fp16"] if model != "dicta-il/dictabert-tiny" else []
+    os.environ["FT_TAG"] = tag
     subprocess.run(["python", "ft_job.py", "--variant", variant, "--epochs", epochs, "--model", model, "--max-len", max_len,
                     "--max-minutes", max_minutes] + extra, cwd=d, check=True)
     if tag and os.path.isdir(f"/tmp/model_{variant}"):   # a copy for remote scoring, encrypted to the REQ key

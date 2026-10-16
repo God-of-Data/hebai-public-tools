@@ -104,4 +104,8 @@ if os.environ.get("SAVE_MODEL"):   # weights + tokenizer, encrypted to recipient
     with tarfile.open(fileobj=buf, mode="w:gz") as tf:
         tf.add(md, arcname=f"model_{a.variant}")
     open(f"out_model/ft_model_{a.variant}.tar.gz.age" if os.path.isdir("out_model") else f"ft_model_{a.variant}.tar.gz.age", "wb").write(encrypt(buf.getvalue(), [rcp]))
-json.dump({"variant": a.variant, "steps": step, "minutes": round((time.time() - t0) / 60, 1)}, open(f"out/ft_status_{a.variant}.json", "w"))
+import hashlib as _h   # Fable #35: fingerprint so build_second refuses dev scores from another model or export
+json.dump({"variant": a.variant, "steps": step, "minutes": round((time.time() - t0) / 60, 1), "tag": os.environ.get("FT_TAG", ""),
+           "model": a.model, "max_len": a.max_len,
+           "train_sha1": _h.sha1(gzip.decompress(decrypt(open("ft/train.jsonl.gz.age", "rb").read(), [key]))).hexdigest()},
+          open(f"out/ft_status_{a.variant}.json", "w"))
