@@ -1,0 +1,18 @@
+{
+ "tag": "flashlite28",
+ "model": "models/gemini-3.5-flash-lite",
+ "sets": [
+  "numeric_wa160",
+  "expressive_posts120"
+ ],
+ "n": 280,
+ "max_out": 1500,
+ "thinking": "",
+ "name": "batches/vpmu7s0hvh5qm8q0j3amt58je5qf55ayno2b",
+ "done": true,
+ "state": "BATCH_STATE_SUCCEEDED",
+ "stats": {
+  "requestCount": "280",
+  "successfulRequestCount": "280"
+ }
+}
