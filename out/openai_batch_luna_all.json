@@ -1,0 +1,34 @@
+{
+ "tag": "luna_all",
+ "model": "gpt-6-luna",
+ "sets": [
+  "own150",
+  "train300",
+  "wa_test50",
+  "wa_train100",
+  "wa2_test100",
+  "qa_pairs_train",
+  "qa_pairs_test",
+  "qa_casual_train",
+  "qa_casual_test",
+  "wa_conv120",
+  "wa_conv_train300",
+  "formal_notices120",
+  "wa_formatted120",
+  "analytic160"
+ ],
+ "n": 2720,
+ "max_tokens": 1500,
+ "batch_id": "batch_6ad1682e0f2081908e59188ed8c210f3",
+ "status": "cancelled",
+ "request_counts": {
+  "total": 2720,
+  "completed": 2653,
+  "failed": 0
+ },
+ "output_file_id": "file-1ByzBJbendUrtq73KsbyMk",
+ "error_file_id": "file-4nQjvDC7EhCyD47MZLnucB",
+ "completed_at": null,
+ "errors": null,
+ "cancel_requested": true
+}
