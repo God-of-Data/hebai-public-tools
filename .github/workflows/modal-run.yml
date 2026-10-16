@@ -4,7 +4,7 @@ name: Modal run
 on:
   workflow_dispatch:
     inputs:
-      job: {description: "check | bino | ft", default: "check"}
+      job: {description: "check | bino | ft | linear", default: "check"}
       tag: {description: "ft: suffix for the weight file (e.g. v35)", default: ""}
       epochs: {description: "ft: epochs", default: "2"}
       limit: {description: "max texts (bino)", default: "5000"}
@@ -54,3 +54,14 @@ jobs:
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           B="out-ft-cv-gpu"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
           git add -f out; git commit --allow-empty -m "ft cv gpu $T"; git push -f origin "$B"
+      - name: Linear fits in parallel (CPU)
+        if: ${{ inputs.job == 'linear' }}
+        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
+        run: |
+          git fetch -q origin lin-input && git checkout FETCH_HEAD -- lin
+          set -o pipefail
+          modal run modal_jobs/linear.py 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
+          grep -E "^job |saved" /tmp/m.txt | sed 's/^/::notice::/' || true
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-modal-linear"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f out; git commit --allow-empty -m "modal linear"; git push -f origin "$B"
