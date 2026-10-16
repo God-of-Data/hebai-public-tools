@@ -136,6 +136,7 @@ def main():
     ap.add_argument("--max-keep", type=int, default=20000)
     ap.add_argument("--max-minutes", type=float, default=300)
     ap.add_argument("--fresh-round", type=int, default=4, help="5 (Fable #28): also exclude the fresh #4 row groups; 7 (Fable #46): also fresh #6")
+    ap.add_argument("--train-hosts", action="store_true", help="keep non-test (training) hosts instead of test hosts (arm H training bases)")
     ap.add_argument("--fresh", action="store_true", help="fresh #4 (2026-10-16): NEW row groups only (none the original "
                     "pool sampled), test hosts only, raw pages saved; output tag fresh")
     ap.add_argument("--raw-test", action="store_true", help="test hosts only, raw_passage cut (structure kept)")
@@ -196,7 +197,14 @@ def main():
                     c7 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap7]
                     add7.update(r7.sample(c7, min(6, len(c7))))
                 used |= add7
-            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000, 8: 1222000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
+            if a.fresh_round >= 9:   # fresh round 8 (mixed sets) used seed 1222000 (same 'used' as then)
+                snap8, add8 = set(used), set()
+                for op in range(4):
+                    r8 = random.Random(1222000 + 1000 * op + files.index(fname))
+                    c8 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap8]
+                    add8.update(r8.sample(c8, min(6, len(c8))))
+                used |= add8
+            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000, 8: 1222000, 9: 1333000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
             rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):
@@ -213,7 +221,7 @@ def main():
                     stats["excluded_" + ex] += 1
                     continue
                 h = host_of(url)
-                if a.fresh and not is_test_host(h):
+                if a.fresh and (is_test_host(h) == a.train_hosts):   # round 9 (Fable #54 arm H): TRAINING hosts only
                     continue
                 key0 = str(d.get("id", [None] * len(d["text"]))[i] or url)
                 raw.write(json.dumps({"doc_id": key0, "url": url, "host": h, "date": date,
