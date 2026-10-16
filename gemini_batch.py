@@ -51,6 +51,39 @@ elif mode == "probe":
             print(f"::notice::{m}: finish {r['candidates'][0].get('finishReason')} prompt {u.get('promptTokenCount')} "
                   f"out {u.get('candidatesTokenCount')} thinking {u.get('thoughtsTokenCount')} words {len(txt.split())}")
     enc(f"gemini_probe_{sys.argv[2]}.jsonl.age", "\n".join(json.dumps(r, ensure_ascii=False) for r in raws).encode())
+elif mode == "sync":   # Fable #53 (mixed texts): synchronous, parallel; jsonl request sets; raw responses in batch-like lines
+    tag, model, sets = sys.argv[2], sys.argv[3], sys.argv[4].split(",")
+    max_out = int(sys.argv[5]) if len(sys.argv) > 5 else 1500
+    key = x25519.Identity.from_str(os.environ["REQ_AGE_KEY"].strip())
+    jobs = []
+    for s in sets:
+        p = next(x for x in (f"requests/{s}.jsonl.age", f"requests/{s}.txt.age", f"requests/{s}.txt") if os.path.exists(x))
+        txt = decrypt(open(p, "rb").read(), [key]).decode() if p.endswith(".age") else open(p).read()
+        qs = [json.loads(l)["prompt"] for l in txt.split("\n") if l.strip()] if ".jsonl" in p else [l.strip() for l in txt.split("\n") if l.strip()]
+        jobs += [(f"{tag}|{s}|{i}", q) for i, q in enumerate(qs)]
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    def one(j):
+        k, q = j; body = {"contents": [{"role": "user", "parts": [{"text": q}]}], "generationConfig": gen_config(max_out)}
+        err = ""
+        for t in range(5):
+            try:
+                req = urllib.request.Request(API + f"/{model}:generateContent", data=json.dumps(body).encode(), method="POST",
+                                             headers={"x-goog-api-key": KEY, "Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=300) as r:
+                    return {"key": k, "response": json.loads(r.read())}
+            except Exception as e:
+                err = repr(e)[:300]; time.sleep(4 * (t + 1))
+        return {"key": k, "error": err}
+    with ThreadPoolExecutor(8) as ex:
+        res = list(ex.map(one, jobs))
+    enc(f"gemini_raw_{tag}.jsonl.age", "\n".join(json.dumps(r, ensure_ascii=False) for r in res).encode())
+    us = [r["response"].get("usageMetadata", {}) for r in res if "response" in r]
+    print(f"::notice::sync {tag}: {sum('response' in r for r in res)} ok, {sum('error' in r for r in res)} failed; "
+          f"prompt {sum(u.get('promptTokenCount', 0) for u in us)} out {sum(u.get('candidatesTokenCount', 0) for u in us)} "
+          f"thinking {sum(u.get('thoughtsTokenCount', 0) or 0 for u in us)} tokens")
+    errs = [r["error"] for r in res if "error" in r][:3]
+    if errs: print("::warning::" + " | ".join(errs))
 elif mode == "submit":
     tag, model, sets = sys.argv[2], sys.argv[3], sys.argv[4].split(",")
     max_out = int(sys.argv[5]) if len(sys.argv) > 5 else 1500

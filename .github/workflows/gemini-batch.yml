@@ -4,7 +4,7 @@ name: Gemini batch
 on:
   workflow_dispatch:
     inputs:
-      mode: {description: "models | probe | submit | fetch", default: "models"}
+      mode: {description: "models | probe | submit | sync | fetch", default: "models"}
       tag: {description: "batch tag", default: "check"}
       model: {description: "model id (submit)", default: ""}
       sets: {description: "comma-separated request sets (submit)", default: ""}
@@ -14,7 +14,7 @@ permissions: {contents: write}
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       GEMINI_PAID_API_KEY: ${{ secrets.GEMINI_PAID_API_KEY }}
       REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
