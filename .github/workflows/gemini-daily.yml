@@ -1,4 +1,4 @@
-# Daily Gemini free-tier collection (now: the experiment-1 paired questions; train300 is complete) (20 requests/day per Flash model; quotas reset at
+# Daily Gemini free-tier collection (2026-10-16: the new failure types, in priority order, one after another; the paired questions are complete) (20 requests/day per Flash model; quotas reset at
 # midnight Pacific ≈ 07:00 UTC). Resumes where the previous day stopped; does nothing once all requests are answered.
 name: Gemini daily
 
@@ -9,11 +9,12 @@ on:
 
 jobs:
   call:
+    strategy: {fail-fast: false, max-parallel: 1, matrix: {requests: [analytic160.txt, wa_formatted120.txt, formal_notices120.txt, wa_conv_train300.txt]}}
     uses: ./.github/workflows/gen.yml
     with:
       provider: gemini
       model: models/gemini-3.5-flash,models/gemini-3.6-flash,models/gemini-3.7-flash,models/gemini-3.8-flash,models/gemini-3-flash-preview,models/gemini-flash-latest,models/gemini-3.5-flash-lite,models/gemini-3.1-flash-lite-preview,models/gemini-3.1-flash-lite,models/gemini-flash-lite-latest
-      requests: qa_pairs_train.txt.age
+      requests: ${{ matrix.requests }}
     secrets: inherit
     permissions:
       contents: write
