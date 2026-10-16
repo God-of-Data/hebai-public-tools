@@ -52,7 +52,30 @@ elif mode == "probe":   # 3 own150 requests per model, synchronous; raw response
                   f"words {len((r['choices'][0]['message'].get('content') or '').split())}")
     enc(f"openai_probe_{sys.argv[2]}.jsonl.age", "\n".join(json.dumps(r, ensure_ascii=False) for r in raws).encode())
 
-elif mode == "submit":
+if mode == "cancel":   # OpenAI keeps the completed results of a cancelled batch (and bills only those)
+    tag = sys.argv[2]
+    meta = json.load(open(f"state/openai_batch_{tag}.json"))
+    b = call("POST", f"/batches/{meta['batch_id']}/cancel", b"{}")
+    meta["status"] = b["status"]; meta["cancel_requested"] = True
+    json.dump(meta, open(f"out/openai_batch_{tag}.json", "w"), indent=1)
+    print(f"::notice::batch {tag}: cancel requested, status {b['status']} {json.dumps(b.get('request_counts'))}")
+
+elif mode == "resubmit":   # new batch <newtag> with only the requests of <tag> that have no completed answer
+    newtag, tag = sys.argv[2], sys.argv[3]   # workflow: tag = new tag, model field = source tag
+    meta = json.load(open(f"state/openai_batch_{tag}.json"))
+    b = call("GET", f"/batches/{meta['batch_id']}")
+    done = set()
+    if b.get("output_file_id"):   # read in memory only (custom ids); the raw file itself is saved by fetch
+        for l in call("GET", f"/files/{b['output_file_id']}/content", raw=True).decode().splitlines():
+            if l.strip():
+                r = json.loads(l)
+                if (r.get("response") or {}).get("status_code") == 200: done.add(r["custom_id"])
+    sys.argv = [sys.argv[0], "submit", newtag, meta["model"], ",".join(meta["sets"]), str(meta.get("max_tokens", 1200))]
+    SKIP = {c.split("|", 1)[1] for c in done}
+    print(f"::notice::{tag}: {len(done)} completed; resubmitting the rest as {newtag}")
+    mode = "submit"
+
+if mode == "submit":
     tag, model, sets = sys.argv[2], sys.argv[3], sys.argv[4].split(",")
     maxtok = int(sys.argv[5]) if len(sys.argv) > 5 else 1200
     key = x25519.Identity.from_str(os.environ["REQ_AGE_KEY"].strip())
@@ -62,6 +85,7 @@ elif mode == "submit":
         blob = open(p, "rb").read()
         txt = decrypt(blob, [key]).decode() if p.endswith(".age") else blob.decode()
         for i, q in enumerate(l.strip() for l in txt.split("\n") if l.strip()):
+            if f"{s}|{i}" in globals().get("SKIP", set()): continue
             body = {"model": model, "messages": [{"role": "user", "content": q}], "max_completion_tokens": maxtok}
             if os.environ.get("REASONING"): body["reasoning_effort"] = os.environ["REASONING"]
             lines.append(json.dumps({"custom_id": f"{tag}|{s}|{i}", "method": "POST", "url": "/v1/chat/completions", "body": body},
@@ -79,7 +103,7 @@ elif mode == "submit":
                "status": b["status"]}, open(f"out/openai_batch_{tag}.json", "w"), indent=1)
     print(f"::notice::batch {tag}: {len(lines)} requests, model {model}, id {b['id']}, status {b['status']}")
 
-elif mode == "fetch":
+if mode == "fetch":
     tag = sys.argv[2]
     meta = json.load(open(f"state/openai_batch_{tag}.json"))
     b = call("GET", f"/batches/{meta['batch_id']}")

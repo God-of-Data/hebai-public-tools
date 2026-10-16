@@ -5,7 +5,7 @@ name: OpenAI batch
 on:
   workflow_dispatch:
     inputs:
-      mode: {description: "check | submit | fetch", default: "check"}
+      mode: {description: "check | probe | submit | fetch | cancel | resubmit (model = source tag)", default: "check"}
       tag: {description: "batch tag", default: "check"}
       model: {description: "model id (submit)", default: ""}
       sets: {description: "comma-separated request sets (submit)", default: ""}
@@ -31,6 +31,9 @@ jobs:
           mkdir -p out state
           if git fetch -q origin "out-openai-${{ inputs.tag }}" 2>/dev/null; then
             git checkout FETCH_HEAD -- out 2>/dev/null || true; cp out/openai_batch_*.json state/ 2>/dev/null || true
+          fi
+          if [ "${{ inputs.mode }}" = "resubmit" ] && git fetch -q origin "out-openai-${{ inputs.model }}" 2>/dev/null; then
+            git show "FETCH_HEAD:out/openai_batch_${{ inputs.model }}.json" > "state/openai_batch_${{ inputs.model }}.json"
           fi
       - run: python openai_batch.py ${{ inputs.mode }} ${{ inputs.tag }} ${{ inputs.model }} ${{ inputs.sets }} ${{ inputs.max_tokens }}
       - name: Save
