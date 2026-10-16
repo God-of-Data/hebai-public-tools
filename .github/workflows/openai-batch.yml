@@ -5,7 +5,7 @@ name: OpenAI batch
 on:
   workflow_dispatch:
     inputs:
-      mode: {description: "check | probe | submit | fetch | cancel | resubmit (model = source tag)", default: "check"}
+      mode: {description: "check | probe | write | submit | fetch | cancel | resubmit (model = source tag)", default: "check"}
       tag: {description: "batch tag", default: "check"}
       model: {description: "model id (submit)", default: ""}
       sets: {description: "comma-separated request sets (submit)", default: ""}

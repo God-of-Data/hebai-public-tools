@@ -52,6 +52,24 @@ elif mode == "probe":   # 3 own150 requests per model, synchronous; raw response
                   f"words {len((r['choices'][0]['message'].get('content') or '').split())}")
     enc(f"openai_probe_{sys.argv[2]}.jsonl.age", "\n".join(json.dumps(r, ensure_ascii=False) for r in raws).encode())
 
+if mode == "write":   # Fable #28: half of the new request sets written by ChatGPT (requests only, generic, no personal data)
+    NUM = ("כתוב 20 בקשות שונות בעברית שאנשים בישראל מקלידים לצ'אטבוט כדי לקבל הודעת וואטסאפ מסודרת עם פירוט מספרי, "
+           "בנושא: {k}. כל בקשה מבקשת שהתשובה תהיה הודעת וואטסאפ עם שורות קצרות ומספרים. כתוב כמו שאנשים כותבים בטלפון. "
+           "אסור לכלול: מסעדות, המבורגר, ארוחות, עלות מנה או אוכל. בלי מספור, בקשה אחת בכל שורה, ושום דבר מלבד הבקשות.")
+    EXP = ("כתוב 20 בקשות שונות בעברית שאנשים בישראל מקלידים לצ'אטבוט כדי שיכתוב להם פוסט אישי לרשת חברתית אחרי אירוע "
+           "מהסוג: {k}, כפי שהם היו מפרסמים, בשורות קצרות. אל תזכיר אימוג'ים או סימנים. אסור לכלול: יום הזיכרון, טקסי זיכרון, "
+           "הר הרצל, סיורי לילה עם תלמידים. בלי מספור, בקשה אחת בכל שורה, ושום דבר מלבד הבקשות.")
+    kinds = [("numeric", NUM, k) for k in ("תקציבים וחלוקת הוצאות בין אנשים", "מחירונים והצעות מחיר של עסקים קטנים",
+                                          "השוואות מחירים של שירותים ומוצרים", "לוחות זמנים ותורנויות עם שעות ותאריכים")]
+    kinds += [("expressive", EXP, k) for k in ("הישג אישי או ספורטיבי", "אירוע משפחתי משמח", "שינוי גדול בחיים כמו מעבר, עבודה חדשה או פרידה")]
+    out = []
+    for kind, tmpl, k in kinds:
+        r = call("POST", "/chat/completions", json.dumps({"model": sys.argv[3], "messages": [{"role": "user", "content": tmpl.format(k=k)}],
+                                                          "max_completion_tokens": 4000}).encode())
+        out.append({"kind": kind, "topic": k, "response": r})
+        print(f"::notice::{kind} / {k}: {len((r['choices'][0]['message'].get('content') or '').splitlines())} lines")
+    json.dump(out, open(f"out/requests_written_{sys.argv[2]}.json", "w"), ensure_ascii=False, indent=1)
+
 if mode == "cancel":   # OpenAI keeps the completed results of a cancelled batch (and bills only those)
     tag = sys.argv[2]
     meta = json.load(open(f"state/openai_batch_{tag}.json"))
