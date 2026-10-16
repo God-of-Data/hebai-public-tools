@@ -17,6 +17,7 @@ ap.add_argument("--model", default="dicta-il/dictabert-tiny")
 ap.add_argument("--epochs", type=float, default=2)
 ap.add_argument("--max-len", type=int, default=128)
 ap.add_argument("--max-minutes", type=float, default=300)
+ap.add_argument("--fp16", action="store_true", help="autocast fp16 on GPU (arm B, base model at 512 tokens)")
 a = ap.parse_args()
 t0 = time.time()
 torch.set_num_threads(os.cpu_count() or 4); torch.manual_seed(0); random.seed(0)
@@ -58,7 +59,9 @@ def predict(rows):
     with torch.no_grad():
         for b in batches(rows, 64, False):
             enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
-            out += torch.softmax(model(**enc).logits, -1)[:, 1].cpu().tolist()
+            with torch.autocast("cuda", dtype=torch.float16, enabled=a.fp16 and DEV == "cuda"):
+                lg = model(**enc).logits.float()
+            out += torch.softmax(lg, -1)[:, 1].cpu().tolist()
     model.train(); return out
 
 def auroc(y, s):
@@ -66,12 +69,19 @@ def auroc(y, s):
     n1 = y.sum(); n0 = len(y) - n1
     return float((r[y == 1].sum() - n1 * (n1 + 1) / 2) / max(1, n1 * n0))
 
+scaler = torch.cuda.amp.GradScaler(enabled=a.fp16 and DEV == "cuda")
 model.train(); step = 0; stop = False
 while step < steps and not stop:
     for b in batches(tr, B, True):
         enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
-        loss = lossf(model(**enc).logits, torch.tensor([r["label"] for r in b], device=DEV))
-        loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); sch.step(); opt.zero_grad(); step += 1
+        with torch.autocast("cuda", dtype=torch.float16, enabled=a.fp16 and DEV == "cuda"):
+            loss = lossf(model(**enc).logits.float(), torch.tensor([r["label"] for r in b], device=DEV))
+        if a.fp16 and DEV == "cuda":
+            scaler.scale(loss).backward(); scaler.unscale_(opt); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            scaler.step(opt); scaler.update()
+        else:
+            loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+        sch.step(); opt.zero_grad(); step += 1
         if step % 200 == 0:
             print(f"step {step}/{steps} loss {loss.item():.3f} {(time.time() - t0) / 60:.1f} min", flush=True)
         if step >= steps or (time.time() - t0) / 60 > a.max_minutes - 25:
@@ -89,7 +99,7 @@ if cvd:
     open("out/ft_dev_cv.jsonl.age", "wb").write(encrypt(blob, [rcp]))
 if os.environ.get("SAVE_MODEL"):   # weights + tokenizer, encrypted to recipient.txt (uploaded to a release by the workflow)
     import io, tarfile
-    md = f"/tmp/model_{a.variant}"; model.to("cpu").save_pretrained(md); tok.save_pretrained(md)
+    md = f"/tmp/model_{a.variant}"; (model.to("cpu").half() if a.fp16 else model.to("cpu")).save_pretrained(md); tok.save_pretrained(md)
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tf:
         tf.add(md, arcname=f"model_{a.variant}")

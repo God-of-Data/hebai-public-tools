@@ -4,7 +4,9 @@ name: Modal run
 on:
   workflow_dispatch:
     inputs:
-      job: {description: "check | bino | ft | linear", default: "check"}
+      job: {description: "check | bino | ft | linear | ftscore", default: "check"}
+      model: {description: "ft: model id", default: "dicta-il/dictabert-tiny"}
+      max_len: {description: "ft / ftscore: max tokens", default: "128"}
       tag: {description: "ft: suffix for the weight file (e.g. v35)", default: ""}
       epochs: {description: "ft: epochs", default: "2"}
       limit: {description: "max texts (bino)", default: "5000"}
@@ -12,7 +14,7 @@ permissions: {contents: write}
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 330
     env:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
@@ -46,7 +48,7 @@ jobs:
         run: |
           git fetch -q origin ft-input && git checkout FETCH_HEAD -- ft
           set -o pipefail
-          modal run modal_jobs/ft.py --variant cv --epochs ${{ inputs.epochs }} 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
+          modal run modal_jobs/ft.py --variant cv --epochs ${{ inputs.epochs }} --model ${{ inputs.model }} --max-len ${{ inputs.max_len }} --tag "${{ inputs.tag }}" 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
           grep -E "::notice::|saved|device" /tmp/m.txt | sed 's/^::notice:://; s/^/::notice::/' || true
           T="${{ inputs.tag }}"; if [ -n "$T" ]; then for f in out_model/*.tar.gz.age; do mv "$f" "${f%.tar.gz.age}_$T.tar.gz.age"; done; fi
           gh release view ft-models >/dev/null 2>&1 || gh release create ft-models --title "Fine-tuned models (encrypted)" --notes "age-encrypted" || true
@@ -65,3 +67,14 @@ jobs:
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           B="out-modal-linear"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
           git add -f out; git commit --allow-empty -m "modal linear"; git push -f origin "$B"
+      - name: Score public test texts with a stored fine-tune
+        if: ${{ inputs.job == 'ftscore' }}
+        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
+        run: |
+          git fetch -q origin ftscore-input && git checkout FETCH_HEAD -- score
+          set -o pipefail
+          modal run modal_jobs/ft_score.py --tag "${{ inputs.tag }}" --max-len ${{ inputs.max_len }} 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
+          grep -E "scored|saved" /tmp/m.txt | sed 's/^/::notice::/' || true
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-ftscore"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f out; git commit --allow-empty -m "ftscore ${{ inputs.tag }}"; git push -f origin "$B"
