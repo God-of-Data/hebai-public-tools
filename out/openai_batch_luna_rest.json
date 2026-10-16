@@ -1,0 +1,34 @@
+{
+ "tag": "luna_rest",
+ "model": "gpt-6-luna",
+ "sets": [
+  "own150",
+  "train300",
+  "wa_test50",
+  "wa_train100",
+  "wa2_test100",
+  "qa_pairs_train",
+  "qa_pairs_test",
+  "qa_casual_train",
+  "qa_casual_test",
+  "wa_conv120",
+  "wa_conv_train300",
+  "formal_notices120",
+  "wa_formatted120",
+  "analytic160"
+ ],
+ "n": 67,
+ "max_tokens": 1500,
+ "batch_id": "batch_6ad173d9f8f08190859fb6ae69e17005",
+ "status": "cancelling",
+ "request_counts": {
+  "total": 67,
+  "completed": 66,
+  "failed": 0
+ },
+ "output_file_id": null,
+ "error_file_id": null,
+ "completed_at": null,
+ "errors": null,
+ "cancel_requested": true
+}
