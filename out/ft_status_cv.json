@@ -1,0 +1,1 @@
+{"variant": "cv", "steps": 1490, "minutes": 0.9, "tag": "v42h", "model": "dicta-il/dictabert", "max_len": 128, "head": "seq-cls", "lr": 5e-05, "precision": "fp16", "bucketed": true, "train_sha1": "8da1fb3d17c513d336accd5a4f77d396dbbd1813"}
