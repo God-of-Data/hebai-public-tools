@@ -20,6 +20,8 @@ def run(bundle: bytes, variant: str, epochs: str, model: str = "dicta-il/dictabe
     d = tempfile.mkdtemp(); tarfile.open(fileobj=io.BytesIO(bundle)).extractall(d)
     os.makedirs(f"{d}/out_model", exist_ok=True)
     extra = ["--fp16"] if model != "dicta-il/dictabert-tiny" else []
+    if "neo" in model.lower():   # Fable #49: NeoDictaBERT recipe fixed from its documentation, before any score
+        extra = ["--bf16", "--lr", "2e-5", "--pool", "mean"]
     os.environ["FT_TAG"] = tag
     subprocess.run(["python", "ft_job.py", "--variant", variant, "--epochs", epochs, "--model", model, "--max-len", max_len,
                     "--max-minutes", max_minutes] + extra, cwd=d, check=True)
