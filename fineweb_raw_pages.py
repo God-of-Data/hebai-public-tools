@@ -189,7 +189,14 @@ def main():
                     c6 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap]
                     add6.update(r6.sample(c6, min(6, len(c6))))
                 used |= add6
-            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
+            if a.fresh_round >= 8:   # fresh #7 used 4 parts x 6 row groups per file with seed 1111000 (same 'used' as then)
+                snap7, add7 = set(used), set()
+                for op in range(4):
+                    r7 = random.Random(1111000 + 1000 * op + files.index(fname))
+                    c7 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap7]
+                    add7.update(r7.sample(c7, min(6, len(c7))))
+                used |= add7
+            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000, 8: 1222000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
             rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):
