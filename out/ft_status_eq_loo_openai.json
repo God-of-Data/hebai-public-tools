@@ -1,0 +1,1 @@
+{"variant": "eq_loo_openai", "steps": 5346, "minutes": 4.0, "tag": "v41bo", "model": "dicta-il/dictabert", "max_len": 512, "head": "seq-cls", "lr": 5e-05, "precision": "fp16", "bucketed": true, "train_sha1": "89b3f33b731d60f1f3662fd1668021cf9f809e22"}
