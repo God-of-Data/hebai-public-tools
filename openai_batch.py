@@ -99,10 +99,12 @@ if mode == "submit":
     key = x25519.Identity.from_str(os.environ["REQ_AGE_KEY"].strip())
     lines = []
     for s in sets:
-        p = f"requests/{s}.txt.age" if os.path.exists(f"requests/{s}.txt.age") else f"requests/{s}.txt"
+        p = next(x for x in (f"requests/{s}.jsonl.age", f"requests/{s}.txt.age", f"requests/{s}.txt") if os.path.exists(x))
         blob = open(p, "rb").read()
         txt = decrypt(blob, [key]).decode() if p.endswith(".age") else blob.decode()
-        for i, q in enumerate(l.strip() for l in txt.split("\n") if l.strip()):
+        qs = ([json.loads(l)["prompt"] for l in txt.split("\n") if l.strip()] if ".jsonl" in p   # multi-line prompts (Fable #52)
+              else [l.strip() for l in txt.split("\n") if l.strip()])
+        for i, q in enumerate(qs):
             if f"{s}|{i}" in globals().get("SKIP", set()): continue
             body = {"model": model, "messages": [{"role": "user", "content": q}], "max_completion_tokens": maxtok}
             if os.environ.get("REASONING"): body["reasoning_effort"] = os.environ["REASONING"]
