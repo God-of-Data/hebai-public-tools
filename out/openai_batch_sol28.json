@@ -1,0 +1,22 @@
+{
+ "tag": "sol28",
+ "model": "gpt-6.1-sol",
+ "sets": [
+  "numeric_wa160",
+  "expressive_posts120"
+ ],
+ "n": 280,
+ "max_tokens": 1500,
+ "batch_id": "batch_6ad1e7d879e8819099ec65e9c4329d3a",
+ "status": "cancelled",
+ "cancel_requested": true,
+ "request_counts": {
+  "total": 280,
+  "completed": 279,
+  "failed": 0
+ },
+ "output_file_id": "file-MnJRpURLmQ4QeKw65veAwy",
+ "error_file_id": "file-WKQdk7zNhDrwJRNZfSHq8j",
+ "completed_at": null,
+ "errors": null
+}
