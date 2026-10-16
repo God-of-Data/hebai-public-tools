@@ -93,6 +93,37 @@ elif mode == "resubmit":   # new batch <newtag> with only the requests of <tag> 
     print(f"::notice::{tag}: {len(done)} completed; resubmitting the rest as {newtag}")
     mode = "submit"
 
+if mode == "sync":   # Fable #53: same requests as a batch, sent synchronously (parallel); raw output in the batch format
+    tag, model, sets = sys.argv[2], sys.argv[3], sys.argv[4].split(",")
+    maxtok = int(sys.argv[5]) if len(sys.argv) > 5 else 1200
+    key = x25519.Identity.from_str(os.environ["REQ_AGE_KEY"].strip())
+    jobs = []
+    for s in sets:
+        p = next(x for x in (f"requests/{s}.jsonl.age", f"requests/{s}.txt.age", f"requests/{s}.txt") if os.path.exists(x))
+        txt = decrypt(open(p, "rb").read(), [key]).decode() if p.endswith(".age") else open(p).read()
+        qs = [json.loads(l)["prompt"] for l in txt.split("\n") if l.strip()] if ".jsonl" in p else [l.strip() for l in txt.split("\n") if l.strip()]
+        jobs += [(f"{tag}|{s}|{i}", q) for i, q in enumerate(qs)]
+    from concurrent.futures import ThreadPoolExecutor
+    def one(j):
+        cid, q = j
+        body = {"model": model, "messages": [{"role": "user", "content": q}], "max_completion_tokens": maxtok}
+        for t in range(4):
+            try:
+                req = urllib.request.Request(API + "/chat/completions", data=json.dumps(body).encode(), method="POST",
+                                             headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=300) as r:
+                    return {"custom_id": cid, "response": {"status_code": 200, "body": json.loads(r.read())}}
+            except Exception as e:
+                err = repr(e)[:300]; time.sleep(5 * (t + 1))
+        return {"custom_id": cid, "error": err}
+    with ThreadPoolExecutor(8) as ex:
+        res = list(ex.map(one, jobs))
+    enc(f"openai_raw_{tag}.jsonl.age", "\n".join(json.dumps(r, ensure_ascii=False) for r in res).encode())
+    tok = [r["response"]["body"].get("usage", {}) for r in res if "response" in r]
+    print(f"::notice::sync {tag}: {sum('response' in r for r in res)} ok, {sum('error' in r for r in res)} failed; "
+          f"prompt {sum(u.get('prompt_tokens', 0) for u in tok)} completion {sum(u.get('completion_tokens', 0) for u in tok)} tokens")
+    sys.exit(0)
+
 if mode == "submit":
     tag, model, sets = sys.argv[2], sys.argv[3], sys.argv[4].split(",")
     maxtok = int(sys.argv[5]) if len(sys.argv) > 5 else 1200

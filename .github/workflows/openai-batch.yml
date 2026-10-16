@@ -5,7 +5,7 @@ name: OpenAI batch
 on:
   workflow_dispatch:
     inputs:
-      mode: {description: "check | probe | write | submit | fetch | cancel | resubmit (model = source tag)", default: "check"}
+      mode: {description: "check | probe | write | submit | sync | fetch | cancel | resubmit (model = source tag)", default: "check"}
       tag: {description: "batch tag", default: "check"}
       model: {description: "model id (submit)", default: ""}
       sets: {description: "comma-separated request sets (submit)", default: ""}
@@ -15,7 +15,7 @@ permissions: {contents: write}
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
