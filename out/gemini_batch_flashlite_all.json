@@ -1,0 +1,30 @@
+{
+ "tag": "flashlite_all",
+ "model": "models/gemini-3.5-flash-lite",
+ "sets": [
+  "own150",
+  "train300",
+  "wa_test50",
+  "wa_train100",
+  "wa2_test100",
+  "qa_pairs_train",
+  "qa_pairs_test",
+  "qa_casual_train",
+  "qa_casual_test",
+  "wa_conv120",
+  "wa_conv_train300",
+  "formal_notices120",
+  "wa_formatted120",
+  "analytic160"
+ ],
+ "n": 2720,
+ "max_out": 1500,
+ "thinking": "",
+ "name": "batches/nvvb81z2oknmy6viut80o29mlff92omg4jcx",
+ "done": true,
+ "state": "BATCH_STATE_SUCCEEDED",
+ "stats": {
+  "requestCount": "2720",
+  "successfulRequestCount": "2720"
+ }
+}
