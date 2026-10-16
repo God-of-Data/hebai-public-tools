@@ -71,7 +71,7 @@ tr = [r for r in train if r["group"] not in dev_g]; dev = [r for r in train if r
 pos = sum(r["label"] for r in tr); w = torch.tensor([1.0, (len(tr) - pos) / max(1, pos)])
 lossf = torch.nn.CrossEntropyLoss(weight=w.to(DEV))
 opt = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.01)
-B = 32; steps = int(a.epochs * len(tr) / B)
+B = 32; MB = 8 if NEO else 32; steps = int(a.epochs * len(tr) / B)
 sch = get_linear_schedule_with_warmup(opt, int(0.06 * steps), steps)
 
 def batches(rows, bs, shuffle):
@@ -83,7 +83,7 @@ def batches(rows, bs, shuffle):
 def predict(rows):
     model.eval(); out = []
     with torch.no_grad():
-        for b in batches(rows, 64, False):
+        for b in batches(rows, 16 if NEO else 64, False):
             enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
             with torch.autocast("cuda", dtype=torch.float16, enabled=a.fp16 and DEV == "cuda"):
                 lg = model(**_enc_args(enc)).logits.float()
@@ -99,14 +99,16 @@ scaler = torch.cuda.amp.GradScaler(enabled=a.fp16 and DEV == "cuda")
 model.train(); step = 0; stop = False
 while step < steps and not stop:
     for b in batches(tr, B, True):
-        enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
-        with torch.autocast("cuda", dtype=torch.float16, enabled=a.fp16 and DEV == "cuda"):
-            loss = lossf(model(**_enc_args(enc)).logits.float(), torch.tensor([r["label"] for r in b], device=DEV))
+        for k in range(0, len(b), MB):   # micro-batches (NeoDictaBERT: 8 x 4 = the same 32 per optimizer step)
+            mb = b[k:k + MB]
+            enc = tok([r["text"] for r in mb], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
+            with torch.autocast("cuda", dtype=torch.float16, enabled=a.fp16 and DEV == "cuda"):
+                loss = lossf(model(**_enc_args(enc)).logits.float(), torch.tensor([r["label"] for r in mb], device=DEV)) * len(mb) / len(b)
+            (scaler.scale(loss) if a.fp16 and DEV == "cuda" else loss).backward()
         if a.fp16 and DEV == "cuda":
-            scaler.scale(loss).backward(); scaler.unscale_(opt); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            scaler.step(opt); scaler.update()
+            scaler.unscale_(opt); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); scaler.step(opt); scaler.update()
         else:
-            loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
         sch.step(); opt.zero_grad(); step += 1
         if step % 200 == 0:
             print(f"step {step}/{steps} loss {loss.item():.3f} {(time.time() - t0) / 60:.1f} min", flush=True)
