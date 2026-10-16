@@ -37,7 +37,8 @@ def fit(bundle: bytes, recipient: str, job: str) -> tuple:
 def main():
     bundle = open("lin/bundle.age", "rb").read()
     rcp = [w for w in open("recipient.txt").read().split() if w.startswith("age1")][0]
-    names = ["oof0", "oof1", "oof2", "oof3", "oof4", "cvlin", "final"]
+    names = [l.strip() for l in open("lin/jobs.txt") if l.strip()] if os.path.exists("lin/jobs.txt") else \
+        ["oof0", "oof1", "oof2", "oof3", "oof4", "cvlin", "final"]
     os.makedirs("out", exist_ok=True)
     for job, blob, fp, mins in fit.starmap([(bundle, rcp, j) for j in names]):
         open(f"out/{job}.{'pkl' if job == 'final' else 'npy'}.age", "wb").write(blob)
