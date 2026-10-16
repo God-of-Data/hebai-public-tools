@@ -1,0 +1,28 @@
+{
+ "tag": "sol_test",
+ "model": "gpt-6.1-sol",
+ "sets": [
+  "own150",
+  "wa_test50",
+  "wa2_test100",
+  "qa_pairs_test",
+  "qa_casual_test",
+  "wa_conv120",
+  "formal_notices120",
+  "wa_formatted120",
+  "analytic160"
+ ],
+ "n": 1228,
+ "max_tokens": 1500,
+ "batch_id": "batch_6ad16832b85c8190a288b9b5dd5bafce",
+ "status": "completed",
+ "request_counts": {
+  "total": 1228,
+  "completed": 1228,
+  "failed": 0
+ },
+ "output_file_id": "file-Vd9kWFVnmy7MRZzT5Q3Lcq",
+ "error_file_id": null,
+ "completed_at": 1792109072,
+ "errors": null
+}
