@@ -20,6 +20,7 @@ ap.add_argument("--max-minutes", type=float, default=300)
 a = ap.parse_args()
 t0 = time.time()
 torch.set_num_threads(os.cpu_count() or 4); torch.manual_seed(0); random.seed(0)
+DEV = "cuda" if torch.cuda.is_available() else "cpu"   # GPU when run on Modal (modal_jobs/ft.py)
 key = x25519.Identity.from_str(os.environ["REQ_AGE_KEY"].strip())
 load = lambda p: [json.loads(l) for l in gzip.decompress(decrypt(open(p, "rb").read(), [key])).decode().splitlines() if l.strip()]
 train, ev = load("ft/train.jsonl.gz.age"), load("ft/eval.jsonl.gz.age")
@@ -32,7 +33,7 @@ if a.variant == "topic":
         r["text"] = mask(r["text"])
 tok = AutoTokenizer.from_pretrained(a.model)
 model = AutoModelForSequenceClassification.from_pretrained(a.model, num_labels=2)
-print("params", sum(p.numel() for p in model.parameters()), flush=True)
+model.to(DEV); print("params", sum(p.numel() for p in model.parameters()), "device", DEV, flush=True)
 cvd = []
 if a.variant == "cv":
     cvd = [r for r in train if r.get("cvdev")]; train = [r for r in train if not r.get("cvdev")]
@@ -41,7 +42,7 @@ if a.variant == "cv":
 groups = sorted({r["group"] for r in train}); random.shuffle(groups); dev_g = set(groups[: len(groups) // 20])
 tr = [r for r in train if r["group"] not in dev_g]; dev = [r for r in train if r["group"] in dev_g]
 pos = sum(r["label"] for r in tr); w = torch.tensor([1.0, (len(tr) - pos) / max(1, pos)])
-lossf = torch.nn.CrossEntropyLoss(weight=w)
+lossf = torch.nn.CrossEntropyLoss(weight=w.to(DEV))
 opt = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.01)
 B = 32; steps = int(a.epochs * len(tr) / B)
 sch = get_linear_schedule_with_warmup(opt, int(0.06 * steps), steps)
@@ -56,8 +57,8 @@ def predict(rows):
     model.eval(); out = []
     with torch.no_grad():
         for b in batches(rows, 64, False):
-            enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt")
-            out += torch.softmax(model(**enc).logits, -1)[:, 1].tolist()
+            enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
+            out += torch.softmax(model(**enc).logits, -1)[:, 1].cpu().tolist()
     model.train(); return out
 
 def auroc(y, s):
@@ -68,8 +69,8 @@ def auroc(y, s):
 model.train(); step = 0; stop = False
 while step < steps and not stop:
     for b in batches(tr, B, True):
-        enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt")
-        loss = lossf(model(**enc).logits, torch.tensor([r["label"] for r in b]))
+        enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
+        loss = lossf(model(**enc).logits, torch.tensor([r["label"] for r in b], device=DEV))
         loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); sch.step(); opt.zero_grad(); step += 1
         if step % 200 == 0:
             print(f"step {step}/{steps} loss {loss.item():.3f} {(time.time() - t0) / 60:.1f} min", flush=True)
@@ -88,7 +89,7 @@ if cvd:
     open("out/ft_dev_cv.jsonl.age", "wb").write(encrypt(blob, [rcp]))
 if os.environ.get("SAVE_MODEL"):   # weights + tokenizer, encrypted to recipient.txt (uploaded to a release by the workflow)
     import io, tarfile
-    md = f"/tmp/model_{a.variant}"; model.save_pretrained(md); tok.save_pretrained(md)
+    md = f"/tmp/model_{a.variant}"; model.to("cpu").save_pretrained(md); tok.save_pretrained(md)
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tf:
         tf.add(md, arcname=f"model_{a.variant}")

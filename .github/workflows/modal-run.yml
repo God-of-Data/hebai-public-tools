@@ -4,7 +4,9 @@ name: Modal run
 on:
   workflow_dispatch:
     inputs:
-      job: {description: "check | bino", default: "check"}
+      job: {description: "check | bino | ft", default: "check"}
+      tag: {description: "ft: suffix for the weight file (e.g. v35)", default: ""}
+      epochs: {description: "ft: epochs", default: "2"}
       limit: {description: "max texts (bino)", default: "5000"}
 permissions: {contents: write}
 jobs:
@@ -38,3 +40,17 @@ jobs:
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           mkdir -p out; B="out-modal-bino"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
           git add -f out; git commit --allow-empty -m "modal bino"; git push -f origin "$B"
+      - name: Fine-tune on GPU (cv)
+        if: ${{ inputs.job == 'ft' }}
+        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}", GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
+        run: |
+          git fetch -q origin ft-input && git checkout FETCH_HEAD -- ft
+          set -o pipefail
+          modal run modal_jobs/ft.py --variant cv --epochs ${{ inputs.epochs }} 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
+          grep -E "::notice::|saved|device" /tmp/m.txt | sed 's/^::notice:://; s/^/::notice::/' || true
+          T="${{ inputs.tag }}"; if [ -n "$T" ]; then for f in out_model/*.tar.gz.age; do mv "$f" "${f%.tar.gz.age}_$T.tar.gz.age"; done; fi
+          gh release view ft-models >/dev/null 2>&1 || gh release create ft-models --title "Fine-tuned models (encrypted)" --notes "age-encrypted" || true
+          gh release upload ft-models out_model/* --clobber
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-ft-cv-gpu"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f out; git commit --allow-empty -m "ft cv gpu $T"; git push -f origin "$B"
