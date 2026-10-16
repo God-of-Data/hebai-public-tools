@@ -11,7 +11,8 @@ secret = modal.Secret.from_dict({"REQ_AGE_KEY": os.environ.get("REQ_AGE_KEY", ""
 vol = modal.Volume.from_name("hebai-models", create_if_missing=True)   # models encrypted to the REQ key only (for ft_score.py)
 
 
-@app.function(gpu="A10G", image=image, timeout=5 * 60 * 60, secrets=[secret], volumes={"/vol": vol})
+@app.function(gpu=os.environ.get("FT_GPU", "H100"),   # owner 2026-10-16: H100 (about the same total cost, 3-5x faster)
+              image=image, timeout=5 * 60 * 60, secrets=[secret], volumes={"/vol": vol})
 def run(bundle: bytes, variant: str, epochs: str, model: str = "dicta-il/dictabert-tiny", max_len: str = "128",
         tag: str = "", max_minutes: str = "280") -> bytes:
     import subprocess, tempfile

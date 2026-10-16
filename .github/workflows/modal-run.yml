@@ -10,6 +10,7 @@ on:
       tag: {description: "ft: suffix for the weight file (e.g. v35)", default: ""}
       epochs: {description: "ft: epochs", default: "2"}
       variant: {description: "ft: cv | eq_<fit> (equal-volume LOO / control)", default: "cv"}
+      gpu: {description: "ft: Modal GPU type", default: "H100"}
       limit: {description: "max texts (bino)", default: "5000"}
 permissions: {contents: write}
 jobs:
@@ -45,7 +46,7 @@ jobs:
           git add -f out; git commit --allow-empty -m "modal bino"; git push -f origin "$B"
       - name: Fine-tune on GPU (cv)
         if: ${{ inputs.job == 'ft' }}
-        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}", GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
+        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}", GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}", FT_GPU: "${{ inputs.gpu }}"}
         run: |
           git fetch -q origin ft-input && git checkout FETCH_HEAD -- ft
           set -o pipefail
