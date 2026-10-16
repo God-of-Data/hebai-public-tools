@@ -225,7 +225,15 @@ def main():
                     c11 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap11]
                     add11.update(r11.sample(c11, min(24, len(c11))))
                 used |= add11
-            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000, 8: 1222000, 9: 1333000, 10: 1444000, 11: 1555000, 12: 1666000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
+            for rr, seed, n in ((12, 1666000, 64), (13, 1777000, 64)):   # rounds 12-13 (H2 struct cells), 64 row groups per part
+                if a.fresh_round > rr:
+                    snp, add = set(used), set()
+                    for op in range(4):
+                        rq = random.Random(seed + 1000 * op + files.index(fname))
+                        cq = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snp]
+                        add.update(rq.sample(cq, min(n, len(cq))))
+                    used |= add
+            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000, 8: 1222000, 9: 1333000, 10: 1444000, 11: 1555000, 12: 1666000, 13: 1777000, 14: 1888000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
             rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):
