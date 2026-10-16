@@ -36,8 +36,10 @@ tok = AutoTokenizer.from_pretrained(a.model)
 model = AutoModelForSequenceClassification.from_pretrained(a.model, num_labels=2)
 model.to(DEV); print("params", sum(p.numel() for p in model.parameters()), "device", DEV, flush=True)
 cvd = []
-if a.variant == "cv":
+if a.variant == "cv" or a.variant.startswith("eq_"):   # eq_<fit> (Fable #46): equal-volume LOO / control fine-tunes
     cvd = [r for r in train if r.get("cvdev")]; train = [r for r in train if not r.get("cvdev")]
+    if a.variant.startswith("eq_"):
+        train = [r for r in train if a.variant in (r.get("eq") or [])]
     print("cv: train", len(train), "held-out", len(cvd), flush=True)
 # 5% of split groups held out to watch training (never the eval sets)
 groups = sorted({r["group"] for r in train}); random.shuffle(groups); dev_g = set(groups[: len(groups) // 20])

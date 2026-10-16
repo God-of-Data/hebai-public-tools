@@ -9,6 +9,7 @@ on:
       max_len: {description: "ft / ftscore: max tokens", default: "128"}
       tag: {description: "ft: suffix for the weight file (e.g. v35)", default: ""}
       epochs: {description: "ft: epochs", default: "2"}
+      variant: {description: "ft: cv | eq_<fit> (equal-volume LOO / control)", default: "cv"}
       limit: {description: "max texts (bino)", default: "5000"}
 permissions: {contents: write}
 jobs:
@@ -48,7 +49,7 @@ jobs:
         run: |
           git fetch -q origin ft-input && git checkout FETCH_HEAD -- ft
           set -o pipefail
-          modal run modal_jobs/ft.py --variant cv --epochs ${{ inputs.epochs }} --model ${{ inputs.model }} --max-len ${{ inputs.max_len }} --tag "${{ inputs.tag }}" 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
+          modal run modal_jobs/ft.py --variant ${{ inputs.variant }} --epochs ${{ inputs.epochs }} --model ${{ inputs.model }} --max-len ${{ inputs.max_len }} --tag "${{ inputs.tag }}" 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
           grep -E "::notice::|saved|device" /tmp/m.txt | sed 's/^::notice:://; s/^/::notice::/' || true
           T="${{ inputs.tag }}"; if [ -n "$T" ]; then for f in out_model/*.tar.gz.age; do mv "$f" "${f%.tar.gz.age}_$T.tar.gz.age"; done; fi
           gh release view ft-models >/dev/null 2>&1 || gh release create ft-models --title "Fine-tuned models (encrypted)" --notes "age-encrypted" || true

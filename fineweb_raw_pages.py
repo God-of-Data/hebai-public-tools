@@ -135,7 +135,7 @@ def main():
     ap.add_argument("--host-cap", type=int, default=40)
     ap.add_argument("--max-keep", type=int, default=20000)
     ap.add_argument("--max-minutes", type=float, default=300)
-    ap.add_argument("--fresh-round", type=int, default=4, help="5 (Fable #28): also exclude the fresh #4 row groups")
+    ap.add_argument("--fresh-round", type=int, default=4, help="5 (Fable #28): also exclude the fresh #4 row groups; 7 (Fable #46): also fresh #6")
     ap.add_argument("--fresh", action="store_true", help="fresh #4 (2026-10-16): NEW row groups only (none the original "
                     "pool sampled), test hosts only, raw pages saved; output tag fresh")
     ap.add_argument("--raw-test", action="store_true", help="test hosts only, raw_passage cut (structure kept)")
@@ -182,7 +182,14 @@ def main():
                     r5 = random.Random(888000 + 1000 * op + files.index(fname))
                     c5 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in used]
                     used.update(r5.sample(c5, min(6, len(c5))))
-            rnd = random.Random({4: 777000, 5: 888000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
+            if a.fresh_round >= 7:   # fresh #6 used 4 parts x 6 row groups per file with seed 999000 (same 'used' as then)
+                snap, add6 = set(used), set()
+                for op in range(4):
+                    r6 = random.Random(999000 + 1000 * op + files.index(fname))
+                    c6 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in snap]
+                    add6.update(r6.sample(c6, min(6, len(c6))))
+                used |= add6
+            rnd = random.Random({4: 777000, 5: 888000, 6: 999000, 7: 1111000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
             rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):

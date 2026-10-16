@@ -5,7 +5,7 @@ name: FineWeb fresh pages
 on:
   workflow_dispatch:
     inputs:
-      round: {description: "fresh round (4 or 5)", default: "4"}
+      round: {description: "fresh round (4-7)", default: "4"}
 permissions:
   contents: write
 jobs:
