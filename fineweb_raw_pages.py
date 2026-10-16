@@ -135,6 +135,7 @@ def main():
     ap.add_argument("--host-cap", type=int, default=40)
     ap.add_argument("--max-keep", type=int, default=20000)
     ap.add_argument("--max-minutes", type=float, default=300)
+    ap.add_argument("--fresh-round", type=int, default=4, help="5 (Fable #28): also exclude the fresh #4 row groups")
     ap.add_argument("--fresh", action="store_true", help="fresh #4 (2026-10-16): NEW row groups only (none the original "
                     "pool sampled), test hosts only, raw pages saved; output tag fresh")
     ap.add_argument("--raw-test", action="store_true", help="test hosts only, raw_passage cut (structure kept)")
@@ -171,7 +172,12 @@ def main():
                 r0 = random.Random(1000 * op + files.index(fname))
                 cand = [g for g in range(pf.num_row_groups) if g % 8 == op]
                 used.update(r0.sample(cand, min(15, len(cand))))
-            rnd = random.Random(777000 + 1000 * a.part + files.index(fname))
+            if a.fresh_round >= 5:   # fresh #4 used 4 parts x 6 row groups per file with seed 777000
+                for op in range(4):
+                    r4 = random.Random(777000 + 1000 * op + files.index(fname))
+                    c4 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in used]
+                    used.update(r4.sample(c4, min(6, len(c4))))
+            rnd = random.Random((777000 if a.fresh_round == 4 else 888000) + 1000 * a.part + files.index(fname))
             rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):
@@ -233,8 +239,8 @@ def main():
     os.makedirs("out", exist_ok=True)
     for name, b in (("passages", buf), ("raw", raw)):
         data = gzip.compress(b.getvalue().encode("utf-8"))
-        open(f"out/fineweb_{'fresh_' if a.fresh else ''}{name}_{a.part}.jsonl.gz.age", "wb").write(encrypt(data, [rcp]))
-    json.dump({"part": a.part, "stats": stats, "n_hosts": len(hosts)}, open(f"out/status_{'fresh_' if a.fresh else ''}{a.part}.json", "w"), indent=1)
+        open(f"out/fineweb_{('fresh_' if a.fresh_round == 4 else 'fresh5_') if a.fresh else ''}{name}_{a.part}.jsonl.gz.age", "wb").write(encrypt(data, [rcp]))
+    json.dump({"part": a.part, "stats": stats, "n_hosts": len(hosts)}, open(f"out/status_{('fresh_' if a.fresh_round == 4 else 'fresh5_') if a.fresh else ''}{a.part}.json", "w"), indent=1)
     print("::notice::" + json.dumps(dict(stats))[:800], flush=True)
 
 

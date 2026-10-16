@@ -3,7 +3,9 @@
 # nothing readable is stored. Manual only.
 name: FineWeb fresh pages
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      round: {description: "fresh round (4 or 5)", default: "4"}
 permissions:
   contents: write
 jobs:
@@ -16,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - run: pip install huggingface_hub pyarrow fsspec pyrage
-      - run: python fineweb_raw_pages.py --fresh --part ${{ matrix.part }} --parts 4 --rg-per-file 6 --host-cap 40 --max-keep 20000 --max-minutes 130
+      - run: python fineweb_raw_pages.py --fresh --fresh-round ${{ inputs.round }} --part ${{ matrix.part }} --parts 4 --rg-per-file 6 --host-cap 40 --max-keep 20000 --max-minutes 130
       - name: Upload encrypted files to the release
         if: always()
         env:
