@@ -30,6 +30,7 @@ jobs:
           [ -n "$MODAL_TOKEN_ID" ] && echo "::notice::MODAL_TOKEN_ID present" || echo "::error::MODAL_TOKEN_ID missing"
           [ -n "$MODAL_TOKEN_SECRET" ] && echo "::notice::MODAL_TOKEN_SECRET present" || echo "::error::MODAL_TOKEN_SECRET missing"
           if modal app list > /tmp/a.txt 2>&1; then echo "::notice::Modal auth OK"; else echo "::error::Modal auth failed: $(head -c 200 /tmp/a.txt)"; exit 1; fi
+          if [ "${{ inputs.job }}" = "check" ]; then grep -iE "running|ephemeral|deployed" /tmp/a.txt | head -20 | cut -c1-200 | sed 's/^/::notice::/' || true; fi
       - name: Binoculars
         if: ${{ inputs.job == 'bino' }}
         env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
