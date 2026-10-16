@@ -54,7 +54,7 @@ jobs:
           gh release view ft-models >/dev/null 2>&1 || gh release create ft-models --title "Fine-tuned models (encrypted)" --notes "age-encrypted" || true
           gh release upload ft-models out_model/* --clobber
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
-          B="out-ft-cv-gpu"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          B="out-ft-cv-gpu-${{ inputs.tag }}"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
           git add -f out; git commit --allow-empty -m "ft cv gpu $T"; git push -f origin "$B"
       - name: Linear fits in parallel (CPU)
         if: ${{ inputs.job == 'linear' }}
