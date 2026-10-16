@@ -71,7 +71,8 @@ tr = [r for r in train if r["group"] not in dev_g]; dev = [r for r in train if r
 pos = sum(r["label"] for r in tr); w = torch.tensor([1.0, (len(tr) - pos) / max(1, pos)])
 lossf = torch.nn.CrossEntropyLoss(weight=w.to(DEV))
 opt = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.01)
-B = 32; MB = 8 if NEO else 32; steps = int(a.epochs * len(tr) / B)
+_big = DEV == "cuda" and torch.cuda.get_device_properties(0).total_memory > 40e9   # H100 80GB: no micro-batching needed
+B = 32; MB = 8 if (NEO and not _big) else 32; steps = int(a.epochs * len(tr) / B)
 sch = get_linear_schedule_with_warmup(opt, int(0.06 * steps), steps)
 
 def batches(rows, bs, shuffle):
