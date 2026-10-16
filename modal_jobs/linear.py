@@ -6,7 +6,7 @@ import io, os, tarfile
 import modal
 
 app = modal.App("hebai-linear")
-image = modal.Image.debian_slim(python_version="3.11").pip_install("scikit-learn==1.5.2", "scipy==1.14.1", "numpy==1.26.4",
+image = modal.Image.debian_slim(python_version="3.13").pip_install("scikit-learn==1.9.1", "scipy==1.18.1", "numpy==2.5.3",   # = local versions (the final model is unpickled locally)
                                                                     "pyrage==1.2.3", "cloudpickle==3.1.2")
 secret = modal.Secret.from_dict({"REQ_AGE_KEY": os.environ.get("REQ_AGE_KEY", "")})
 
