@@ -32,8 +32,32 @@ if a.variant == "topic":
     mask = lambda t: " ".join(w if w in topw else "[MASK]" for w in t.split())
     for r in train + ev:
         r["text"] = mask(r["text"])
-tok = AutoTokenizer.from_pretrained(a.model)
-model = AutoModelForSequenceClassification.from_pretrained(a.model, num_labels=2)
+NEO = "neo" in a.model.lower()   # NeoDictaBERT (Fable #48 pilot): custom NeoBERT code on the Hub
+tok = AutoTokenizer.from_pretrained(a.model, trust_remote_code=NEO)
+try:
+    model = AutoModelForSequenceClassification.from_pretrained(a.model, num_labels=2, trust_remote_code=NEO)
+except Exception as e:   # no classification head in the remote code: encoder + linear head on the first token
+    print("seq-cls head unavailable, wrapping the encoder:", repr(e)[:300], flush=True)
+    from transformers import AutoModel
+    class _Out:
+        def __init__(self, logits): self.logits = logits
+    class Wrap(torch.nn.Module):
+        def __init__(self):
+            super().__init__(); self.enc = AutoModel.from_pretrained(a.model, trust_remote_code=True)
+            hs = getattr(self.enc.config, "hidden_size", None) or getattr(self.enc.config, "dim", 768)
+            self.head = torch.nn.Sequential(torch.nn.Dropout(0.1), torch.nn.Linear(hs, 2))
+        def forward(self, **kw):
+            o = self.enc(**kw); h = o.last_hidden_state if hasattr(o, "last_hidden_state") else (o[0] if isinstance(o, (tuple, list)) else o)
+            return _Out(self.head(h[:, 0]))
+        def save_pretrained(self, d):
+            self.enc.save_pretrained(d); torch.save(self.head.state_dict(), os.path.join(d, "cls_head.pt"))
+    model = Wrap()
+_fwd_keys = None
+def _enc_args(enc):   # drop inputs the encoder's forward doesn't take (e.g. token_type_ids for NeoBERT)
+    global _fwd_keys
+    if NEO:
+        enc.pop("token_type_ids", None)
+    return enc
 model.to(DEV); print("params", sum(p.numel() for p in model.parameters()), "device", DEV, flush=True)
 cvd = []
 if a.variant == "cv" or a.variant.startswith("eq_"):   # eq_<fit> (Fable #46): equal-volume LOO / control fine-tunes
@@ -62,7 +86,7 @@ def predict(rows):
         for b in batches(rows, 64, False):
             enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
             with torch.autocast("cuda", dtype=torch.float16, enabled=a.fp16 and DEV == "cuda"):
-                lg = model(**enc).logits.float()
+                lg = model(**_enc_args(enc)).logits.float()
             out += torch.softmax(lg, -1)[:, 1].cpu().tolist()
     model.train(); return out
 
@@ -77,7 +101,7 @@ while step < steps and not stop:
     for b in batches(tr, B, True):
         enc = tok([r["text"] for r in b], truncation=True, max_length=a.max_len, padding=True, return_tensors="pt").to(DEV)
         with torch.autocast("cuda", dtype=torch.float16, enabled=a.fp16 and DEV == "cuda"):
-            loss = lossf(model(**enc).logits.float(), torch.tensor([r["label"] for r in b], device=DEV))
+            loss = lossf(model(**_enc_args(enc)).logits.float(), torch.tensor([r["label"] for r in b], device=DEV))
         if a.fp16 and DEV == "cuda":
             scaler.scale(loss).backward(); scaler.unscale_(opt); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             scaler.step(opt); scaler.update()
