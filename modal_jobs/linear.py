@@ -7,7 +7,7 @@ import modal
 
 app = modal.App("hebai-linear")
 image = modal.Image.debian_slim(python_version="3.11").pip_install("scikit-learn==1.5.2", "scipy==1.14.1", "numpy==1.26.4",
-                                                                    "pyrage==1.2.3")
+                                                                    "pyrage==1.2.3", "cloudpickle==3.1.2")
 secret = modal.Secret.from_dict({"REQ_AGE_KEY": os.environ.get("REQ_AGE_KEY", "")})
 
 
@@ -26,7 +26,7 @@ def fit(bundle: bytes, recipient: str, job: str) -> tuple:
     np_ = D["no_punct"]
     m = Scorer(no_punct=np_, rare_heb=bool(np_)).fit([T[i] for i in tr], y[tr].tolist(), vocab=D["vocab"])
     if job == "final":
-        out = pickle.dumps(m, protocol=4)
+        import cloudpickle; out = cloudpickle.dumps(m, protocol=4)   # the vectorizer holds a lambda
     else:
         b = io.BytesIO(); np.save(b, m.decision([T[i] for i in te]).astype(np.float64)); out = b.getvalue()
     rcp = x25519.Recipient.from_str(recipient)
