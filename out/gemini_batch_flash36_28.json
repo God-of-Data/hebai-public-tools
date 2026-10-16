@@ -1,0 +1,18 @@
+{
+ "tag": "flash36_28",
+ "model": "models/gemini-3.6-flash",
+ "sets": [
+  "numeric_wa160",
+  "expressive_posts120"
+ ],
+ "n": 280,
+ "max_out": 2500,
+ "thinking": "low",
+ "name": "batches/4i8u39hxrg2oli3p0h5ngmwht4vhde542tog",
+ "done": true,
+ "state": "BATCH_STATE_SUCCEEDED",
+ "stats": {
+  "requestCount": "280",
+  "successfulRequestCount": "280"
+ }
+}
