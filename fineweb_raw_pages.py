@@ -177,7 +177,12 @@ def main():
                     r4 = random.Random(777000 + 1000 * op + files.index(fname))
                     c4 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in used]
                     used.update(r4.sample(c4, min(6, len(c4))))
-            rnd = random.Random((777000 if a.fresh_round == 4 else 888000) + 1000 * a.part + files.index(fname))
+            if a.fresh_round >= 6:   # fresh #5 used 4 parts x 6 row groups per file with seed 888000
+                for op in range(4):
+                    r5 = random.Random(888000 + 1000 * op + files.index(fname))
+                    c5 = [g for g in range(pf.num_row_groups) if g % 4 == op and g not in used]
+                    used.update(r5.sample(c5, min(6, len(c5))))
+            rnd = random.Random({4: 777000, 5: 888000}.get(a.fresh_round, 999000) + 1000 * a.part + files.index(fname))
             rgs = [g for g in range(pf.num_row_groups) if g % a.parts == a.part and g not in used]
         rgs = sorted(rnd.sample(rgs, min(a.rg_per_file, len(rgs))))
         for b in pf.iter_batches(batch_size=5000, columns=cols, row_groups=rgs):
@@ -239,8 +244,8 @@ def main():
     os.makedirs("out", exist_ok=True)
     for name, b in (("passages", buf), ("raw", raw)):
         data = gzip.compress(b.getvalue().encode("utf-8"))
-        open(f"out/fineweb_{('fresh_' if a.fresh_round == 4 else 'fresh5_') if a.fresh else ''}{name}_{a.part}.jsonl.gz.age", "wb").write(encrypt(data, [rcp]))
-    json.dump({"part": a.part, "stats": stats, "n_hosts": len(hosts)}, open(f"out/status_{('fresh_' if a.fresh_round == 4 else 'fresh5_') if a.fresh else ''}{a.part}.json", "w"), indent=1)
+        open(f"out/fineweb_{('fresh_' if a.fresh_round == 4 else f'fresh{a.fresh_round}_') if a.fresh else ''}{name}_{a.part}.jsonl.gz.age", "wb").write(encrypt(data, [rcp]))
+    json.dump({"part": a.part, "stats": stats, "n_hosts": len(hosts)}, open(f"out/status_{('fresh_' if a.fresh_round == 4 else f'fresh{a.fresh_round}_') if a.fresh else ''}{a.part}.json", "w"), indent=1)
     print("::notice::" + json.dumps(dict(stats))[:800], flush=True)
 
 
