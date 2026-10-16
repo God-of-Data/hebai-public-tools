@@ -4,7 +4,7 @@ name: Modal run
 on:
   workflow_dispatch:
     inputs:
-      job: {description: "check | bino | ft | linear | ftscore", default: "check"}
+      job: {description: "check | bino | ft | linear | ftscore | hfcode", default: "check"}
       model: {description: "ft: model id", default: "dicta-il/dictabert-tiny"}
       max_len: {description: "ft / ftscore: max tokens", default: "128"}
       tag: {description: "ft: suffix for the weight file (e.g. v35)", default: ""}
@@ -81,3 +81,11 @@ jobs:
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           B="out-ftscore"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
           git add -f out; git commit --allow-empty -m "ftscore ${{ inputs.tag }}"; git push -f origin "$B"
+      - name: Public model code from the Hub (hfcode)
+        if: ${{ inputs.job == 'hfcode' }}
+        run: |
+          pip install -q huggingface_hub
+          python -c "from huggingface_hub import list_repo_files, hf_hub_download; import shutil, os; os.makedirs('hfcode', exist_ok=True); [shutil.copy(hf_hub_download('${{ inputs.model }}', f), 'hfcode/' + os.path.basename(f)) for f in list_repo_files('${{ inputs.model }}') if f.endswith('.py')]; print(os.listdir('hfcode'))"
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="hf-code"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f hfcode; git commit -m "public model code: ${{ inputs.model }}"; git push -f origin "$B"

@@ -23,14 +23,29 @@ def score(blob: bytes, recipient: str, tag: str, max_len: int, variant: str = "c
     tarfile.open(fileobj=io.BytesIO(decrypt(open(f"/vol/ft_model_{variant}_{tag}.tar.gz.age", "rb").read(), [key]))).extractall(d)
     md = f"{d}/model_{variant}"
     texts = [json.loads(l) for l in decrypt(blob, [key]).decode().splitlines() if l.strip()]
-    tok = AutoTokenizer.from_pretrained(md); model = AutoModelForSequenceClassification.from_pretrained(md).float().cuda().eval()
+    neo = os.path.exists(f"{md}/cls_head.pt")   # Fable #49 Neo recipe: encoder + mean-pooled linear head
+    tok = AutoTokenizer.from_pretrained(md, trust_remote_code=neo)
+    if neo:
+        from transformers import AutoModel
+        class Wrap(torch.nn.Module):
+            def __init__(self):
+                super().__init__(); self.enc = AutoModel.from_pretrained(md, trust_remote_code=True)
+                self.head = torch.nn.Sequential(torch.nn.Dropout(0.1), torch.nn.Linear(self.enc.config.hidden_size, 2))
+                self.head.load_state_dict(torch.load(f"{md}/cls_head.pt", map_location="cpu"))
+            def forward(self, **kw):
+                kw.pop("token_type_ids", None); h = self.enc(**kw).last_hidden_state; m = kw["attention_mask"].unsqueeze(-1).to(h.dtype)
+                class O: pass
+                o = O(); o.logits = self.head((h * m).sum(1) / m.sum(1).clamp(min=1)); return o
+        model = Wrap().float().cuda().eval()
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(md).float().cuda().eval()
     out, t0 = {}, time.time()
     texts.sort(key=len)
     with torch.no_grad():
         for i in range(0, len(texts), 64):
             b = texts[i:i + 64]
             enc = tok(b, truncation=True, max_length=max_len, padding=True, return_tensors="pt").to("cuda")
-            with torch.autocast("cuda", dtype=torch.float16):
+            with torch.autocast("cuda", dtype=torch.bfloat16 if neo else torch.float16):
                 lg = model(**enc).logits.float()
             for t, v in zip(b, (lg[:, 1] - lg[:, 0]).tolist()):
                 out[hashlib.sha1(t.encode("utf-8")).hexdigest()] = round(max(-13.8155, min(13.8155, v)), 5)
@@ -39,7 +54,7 @@ def score(blob: bytes, recipient: str, tag: str, max_len: int, variant: str = "c
 
 
 @app.local_entrypoint()
-def main(tag: str, max_len: int = 512):
+def main(tag: str, max_len: int = 512, variant: str = "cv"):
     rcp = [w for w in open("recipient.txt").read().split() if w.startswith("age1")][0]
-    blob = score.remote(open("score/texts.jsonl.age", "rb").read(), rcp, tag, max_len)
+    blob = score.remote(open("score/texts.jsonl.age", "rb").read(), rcp, tag, max_len, variant)
     os.makedirs("out", exist_ok=True); open("out/scores.json.age", "wb").write(blob); print("saved out/scores.json.age")
