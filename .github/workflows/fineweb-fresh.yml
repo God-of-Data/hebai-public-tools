@@ -7,6 +7,7 @@ on:
     inputs:
       round: {description: "fresh round (4-9)", default: "4"}
       train_hosts: {description: "1 = training hosts only (arm H)", default: "0"}
+      rg: {description: "row groups per file per part", default: "6"}
 permissions:
   contents: write
 jobs:
@@ -19,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - run: pip install huggingface_hub pyarrow fsspec pyrage
-      - run: python fineweb_raw_pages.py --fresh --fresh-round ${{ inputs.round }} --part ${{ matrix.part }} --parts 4 --rg-per-file 6 --host-cap 40 --max-keep 20000 --max-minutes 130 $( [ "${{ inputs.train_hosts }}" = "1" ] && echo --train-hosts )
+      - run: python fineweb_raw_pages.py --fresh --fresh-round ${{ inputs.round }} --part ${{ matrix.part }} --parts 4 --rg-per-file ${{ inputs.rg }} --host-cap 40 --max-keep 20000 --max-minutes 130 $( [ "${{ inputs.train_hosts }}" = "1" ] && echo --train-hosts )
       - name: Upload encrypted files to the release
         if: always()
         env:
