@@ -1,0 +1,33 @@
+# Free-tier Gemini judge / teacher (#81): public texts only, encrypted in and out. Resumes from branch out-gemini-judge-<set>.
+name: Gemini judge
+on:
+  workflow_dispatch:
+    inputs:
+      set: {description: "request set under requests/ (without .jsonl.age)", default: "judge81g"}
+      models: {description: "comma-separated model order (empty = default)", default: ""}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q pyrage
+      - name: Resume
+        run: |
+          B="out-gemini-judge-${{ inputs.set }}"
+          if git fetch -q origin "$B" 2>/dev/null; then git checkout FETCH_HEAD -- out 2>/dev/null || true; fi
+      - env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
+          MODELS: ${{ inputs.models }}
+        run: python gemini_judge.py "${{ inputs.set }}"
+      - name: Save (encrypted)
+        if: always()
+        run: |
+          B="out-gemini-judge-${{ inputs.set }}"
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          git checkout --orphan "$B"; git rm -rf --cached . > /dev/null; git add -f out
+          git commit -m "gemini judge ${{ inputs.set }}"; git push -f origin "$B"
