@@ -30,9 +30,14 @@ def fit(bundle: bytes, recipient: str, job: str, env: dict | None = None, bpath:
     tr, te = D["jobs"][job]; T, y = D["texts"], D["y"]
     np_ = D["no_punct"]
     sw = [D["sw"][i] for i in tr] if os.environ.get("HEBAI_VBAL") == "1" and "sw" in D else None   # Fable #69
+    if "soft" in D:   # Fable #82: cw(y) per fit on the hard rows; weight = w0 * cw(true label); class_weight None
+        S = D["soft"]; hard = [i for i in tr if i < S["nbase"]]; n1 = sum(S["ytrue"][i] for i in hard); n0 = len(hard) - n1
+        cw = {0: len(hard) / (2 * n0), 1: len(hard) / (2 * n1)}
+        sw = [S["w0"][i] * cw[S["ytrue"][i]] for i in tr]; os.environ["HEBAI_CW"] = "none"
     keep = D["masks"][D["job_mask"][job]] if job in D.get("job_mask", {}) else None   # Fable #79: refit on a selected term set
     m = Scorer(no_punct=np_, rare_heb=bool(np_)).fit([T[i] for i in tr], y[tr].tolist(), vocab=D["vocab"], sample_weight=sw,
-                                                     **({"keep_terms": keep} if keep is not None else {}))
+                                                     **({"keep_terms": keep} if keep is not None else {}),
+                                                     **({"fit_mask": [i < D["soft"]["nbase"] for i in tr]} if "soft" in D else {}))
     if os.environ.get("HEBAI_VBAL") == "1": assert sw is not None, "HEBAI_VBAL=1 but no weights in the bundle"
     if job.startswith("coef_"):   # Fable #79 stage 1: the term weights only
         out = pickle.dumps({"terms": [str(t) for t in m.terms], "w": m.w_words.astype(np.float64)}, protocol=4)
