@@ -1,0 +1,21 @@
+{
+ "tag": "sol82",
+ "model": "gpt-6.1-sol",
+ "sets": [
+  "sol82"
+ ],
+ "n": 5000,
+ "max_tokens": 600,
+ "batch_id": "batch_6ad3ecc6844881908db89512ddc68817",
+ "status": "cancelled",
+ "request_counts": {
+  "total": 5000,
+  "completed": 3842,
+  "failed": 0
+ },
+ "output_file_id": "file-72Zx5uK9JWvs9s2cLR3VpY",
+ "error_file_id": "file-S4qYkH3JnnRRnYMAPxfpJL",
+ "completed_at": null,
+ "errors": null,
+ "cancel_requested": true
+}
