@@ -29,7 +29,9 @@ def fit(bundle: bytes, recipient: str, job: str, env: dict | None = None, bpath:
     D = pickle.load(open(f"{d}/data.pkl", "rb"))
     tr, te = D["jobs"][job]; T, y = D["texts"], D["y"]
     np_ = D["no_punct"]
-    m = Scorer(no_punct=np_, rare_heb=bool(np_)).fit([T[i] for i in tr], y[tr].tolist(), vocab=D["vocab"])
+    sw = [D["sw"][i] for i in tr] if os.environ.get("HEBAI_VBAL") == "1" and "sw" in D else None   # Fable #69
+    m = Scorer(no_punct=np_, rare_heb=bool(np_)).fit([T[i] for i in tr], y[tr].tolist(), vocab=D["vocab"], sample_weight=sw)
+    if os.environ.get("HEBAI_VBAL") == "1": assert sw is not None, "HEBAI_VBAL=1 but no weights in the bundle"
     if job == "final":
         import cloudpickle; out = cloudpickle.dumps(m, protocol=4)   # the vectorizer holds a lambda
     else:
