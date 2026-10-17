@@ -5,6 +5,7 @@ on:
     inputs:
       set: {description: "request set under requests/ (without .jsonl.age)", default: "judge81g"}
       models: {description: "model id (empty = openai/gpt-oss-120b)", default: ""}
+      reasoning: {description: "reasoning_effort (empty = low)", default: ""}
 permissions: {contents: write}
 jobs:
   run:
@@ -23,6 +24,8 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           REQ_AGE_KEY: ${{ secrets.REQ_AGE_KEY }}
           MODEL: ${{ inputs.models }}
+          REASONING: ${{ inputs.reasoning }}
+          PAUSE: "3"
         run: python groq_judge.py "${{ inputs.set }}"
       - name: Save (encrypted)
         if: always()

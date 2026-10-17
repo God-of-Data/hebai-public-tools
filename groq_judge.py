@@ -19,7 +19,7 @@ PROMPT = ("Below are {n} short Hebrew messages, numbered [1] to [{n}]. For EACH 
           "probability (0-100) that it was written by an AI chatbot rather than by a person. Judge each message on its own; "
           "do not compare them with each other. Reply with a JSON list of {n} integers, in order, and nothing else.\n\n")
 def ask(q):
-    body = {"model": MODEL, "messages": [{"role": "user", "content": q}], "max_completion_tokens": 3000, "reasoning_effort": "low"}
+    body = {"model": MODEL, "messages": [{"role": "user", "content": q}], "max_completion_tokens": 3000, "reasoning_effort": os.environ.get("REASONING") or "low"}
     r = urllib.request.Request("https://api.groq.com/openai/v1/chat/completions", data=json.dumps(body).encode(), headers=H)
     with urllib.request.urlopen(r, timeout=180) as f:
         j = json.load(f)
@@ -49,7 +49,7 @@ for n, rq in enumerate(reqs):
         if good or attempt == 1:
             st["done"].append(n); st["model"][str(n)] = MODEL; break
         attempt += 1
-    time.sleep(8)
+    time.sleep(float(os.environ.get("PAUSE") or 8))
 st["fixed"] = MODEL
 part = len([f for f in os.listdir("out") if f.startswith(f"raw_{SET}_")])
 if res:
