@@ -3,8 +3,12 @@
 as a JSON list. One model for the whole set: the first in a fixed order that answers (Fable #81 amendment). Raw replies
 are encrypted to recipient.txt (out/raw_<set>_<n>.jsonl.age); out/status.json keeps the done request numbers and the
 model per request (no content). Resumes where the previous run stopped. usage: python gemini_judge.py <set>"""
-import json, os, re, sys, time, urllib.error, urllib.request
+import json, os, re, sys, time, traceback, urllib.error, urllib.request
 from pyrage import decrypt, encrypt, x25519
+os.makedirs("out", exist_ok=True)
+def _hook(t, v, tb):   # the run log is not readable from here: report the failure as an annotation (no content)
+    print("::error::" + " | ".join(traceback.format_exception(t, v, tb)[-3:]).replace("\n", " ")[:900], flush=True)
+sys.excepthook = _hook
 
 SET = sys.argv[1]
 KEY = os.environ["GEMINI_API_KEY"].strip(); H = {"x-goog-api-key": KEY, "Content-Type": "application/json"}
