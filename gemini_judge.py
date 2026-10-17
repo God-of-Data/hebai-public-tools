@@ -12,7 +12,7 @@ sys.excepthook = _hook
 
 SET = sys.argv[1]
 KEY = os.environ["GEMINI_API_KEY"].strip(); H = {"x-goog-api-key": KEY, "Content-Type": "application/json"}
-ORDER = [m.strip() for m in os.environ.get("MODELS", "models/gemini-3.8-flash,models/gemini-3.7-flash,models/gemini-3.6-flash,"
+ORDER = [m.strip() for m in (os.environ.get("MODELS") or "models/gemini-3.8-flash,models/gemini-3.7-flash,models/gemini-3.6-flash,"
                                             "models/gemini-3.5-flash,models/gemini-flash-latest").split(",") if m.strip()]
 RCP = x25519.Recipient.from_str([w for w in open("recipient.txt").read().split() if w.startswith("age1")][0])
 reqs = [json.loads(l) for l in decrypt(open(f"requests/{SET}.jsonl.age", "rb").read(),
@@ -44,6 +44,7 @@ for n, rq in enumerate(reqs):
     q = PROMPT.format(n=len(rq["texts"])) + "\n\n".join(f"[{i + 1}] {t}" for i, t in enumerate(rq["texts"]))
     attempt, waits = 0, 0
     while attempt < 2 and not stop:
+        if not cands: stop = True; break
         model = st.get("fixed") or cands[0]
         try:
             txt, use = ask(model, q)
