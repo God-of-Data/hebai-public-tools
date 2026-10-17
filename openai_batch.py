@@ -107,6 +107,7 @@ if mode == "sync":   # Fable #53: same requests as a batch, sent synchronously (
     def one(j):
         cid, q = j
         body = {"model": model, "messages": [{"role": "user", "content": q}], "max_completion_tokens": maxtok}
+        if os.environ.get("REASONING"): body["reasoning_effort"] = os.environ["REASONING"]   # #81: judge runs
         for t in range(4):
             try:
                 req = urllib.request.Request(API + "/chat/completions", data=json.dumps(body).encode(), method="POST",
