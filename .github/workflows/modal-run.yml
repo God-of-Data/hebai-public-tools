@@ -66,7 +66,7 @@ jobs:
           git fetch -q origin lin-input && git checkout FETCH_HEAD -- lin
           set -o pipefail
           modal run modal_jobs/linear.py 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
-          grep -E "^job |saved" /tmp/m.txt | sed 's/^/::notice::/' || true
+          grep -E "^job |^bundle|saved" /tmp/m.txt | sed 's/^/::notice::/' || true
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           B="out-modal-linear"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
           git add -f out; git commit --allow-empty -m "modal linear"; git push -f origin "$B"
