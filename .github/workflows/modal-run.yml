@@ -4,7 +4,7 @@ name: Modal run
 on:
   workflow_dispatch:
     inputs:
-      job: {description: "check | bino | ft | linear | ftscore | hfcode", default: "check"}
+      job: {description: "check | bino | ft | linear | cnn | ftscore | hfcode", default: "check"}
       model: {description: "ft: model id", default: "dicta-il/dictabert-tiny"}
       max_len: {description: "ft / ftscore: max tokens", default: "128"}
       tag: {description: "ft: suffix for the weight file (e.g. v35)", default: ""}
@@ -70,6 +70,17 @@ jobs:
           git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
           B="out-modal-linear"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
           git add -f out; git commit --allow-empty -m "modal linear"; git push -f origin "$B"
+      - name: Small char-CNN fits (Fable #80)
+        if: ${{ inputs.job == 'cnn' }}
+        env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
+        run: |
+          git fetch -q origin cnn-input && git checkout FETCH_HEAD -- cnn
+          set -o pipefail
+          modal run modal_jobs/cnn.py 2>&1 | tee /tmp/m.txt || { tail -c 1500 /tmp/m.txt | tr '\n' ' ' | sed 's/^/::error::/'; echo; exit 1; }
+          grep -E "^job |epoch|saved" /tmp/m.txt | sed 's/^/::notice::/' || true
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          B="out-modal-cnn"; git checkout --orphan "$B"; git rm -rf --cached . > /dev/null
+          git add -f out; git commit --allow-empty -m "modal cnn"; git push -f origin "$B"
       - name: Score public test texts with a stored fine-tune
         if: ${{ inputs.job == 'ftscore' }}
         env: {REQ_AGE_KEY: "${{ secrets.REQ_AGE_KEY }}"}
