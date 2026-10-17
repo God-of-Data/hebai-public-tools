@@ -30,9 +30,13 @@ def fit(bundle: bytes, recipient: str, job: str, env: dict | None = None, bpath:
     tr, te = D["jobs"][job]; T, y = D["texts"], D["y"]
     np_ = D["no_punct"]
     sw = [D["sw"][i] for i in tr] if os.environ.get("HEBAI_VBAL") == "1" and "sw" in D else None   # Fable #69
-    m = Scorer(no_punct=np_, rare_heb=bool(np_)).fit([T[i] for i in tr], y[tr].tolist(), vocab=D["vocab"], sample_weight=sw)
+    keep = D["masks"][D["job_mask"][job]] if job in D.get("job_mask", {}) else None   # Fable #79: refit on a selected term set
+    m = Scorer(no_punct=np_, rare_heb=bool(np_)).fit([T[i] for i in tr], y[tr].tolist(), vocab=D["vocab"], sample_weight=sw,
+                                                     **({"keep_terms": keep} if keep is not None else {}))
     if os.environ.get("HEBAI_VBAL") == "1": assert sw is not None, "HEBAI_VBAL=1 but no weights in the bundle"
-    if job == "final":
+    if job.startswith("coef_"):   # Fable #79 stage 1: the term weights only
+        out = pickle.dumps({"terms": [str(t) for t in m.terms], "w": m.w_words.astype(np.float64)}, protocol=4)
+    elif job == "final":
         import cloudpickle; out = cloudpickle.dumps(m, protocol=4)   # the vectorizer holds a lambda
     else:
         b = io.BytesIO(); np.save(b, m.decision([T[i] for i in te]).astype(np.float64)); out = b.getvalue()
@@ -56,12 +60,12 @@ def main():
         args = [(b"", rcp, n.split("|")[1], cfgs[n.split("|")[0]], bpath) for n in names]
         for (job, blob, fp, mins), n in zip(fit.starmap(args, order_outputs=True), names):
             c = n.split("|")[0]
-            open(f"out/{c}__{job}.{'pkl' if job == 'final' else 'npy'}.age", "wb").write(blob)
+            open(f"out/{c}__{job}.{'pkl' if job == 'final' or job.startswith('coef_') else 'npy'}.age", "wb").write(blob)
             print(f"job {c}|{job} done in {mins} min (t+{(time.time() - t0) / 60:.1f})", flush=True)
         vol.remove_file(f"/{bpath}")
     else:
         for job, blob, fp, mins in fit.starmap([(bundle, rcp, j) for j in names]):
-            open(f"out/{job}.{'pkl' if job == 'final' else 'npy'}.age", "wb").write(blob)
+            open(f"out/{job}.{'pkl' if job == 'final' or job.startswith('coef_') else 'npy'}.age", "wb").write(blob)
             print(f"job {job} done in {mins} min (t+{(time.time() - t0) / 60:.1f})", flush=True)
     open("out/fp.txt", "w").write(fp + "\n")
     print("saved", sorted(os.listdir("out")), f"total {(time.time() - t0) / 60:.1f} min")
