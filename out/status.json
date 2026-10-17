@@ -1,0 +1,215 @@
+{
+ "provider": "groq:qwen/qwen3.8-27b",
+ "errors": [
+  {
+   "item": 7,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 587, Requested 499. Pleas [quota ]"
+  },
+  {
+   "item": 10,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 521, Requested 658. Pleas [quota ]"
+  },
+  {
+   "item": 14,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 468, Requested 912. Pleas [quota ]"
+  },
+  {
+   "item": 21,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 577, Requested 912. Pleas [quota ]"
+  },
+  {
+   "item": 30,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 859, Requested 815. Pleas [quota ]"
+  },
+  {
+   "item": 35,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 807, Requested 221. Pleas [quota ]"
+  },
+  {
+   "item": 39,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 773, Requested 248. Pleas [quota ]"
+  },
+  {
+   "item": 46,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 877, Requested 174. Pleas [quota ]"
+  },
+  {
+   "item": 52,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 906, Requested 144. Pleas [quota ]"
+  },
+  {
+   "item": 57,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 897, Requested 219. Pleas [quota ]"
+  },
+  {
+   "item": 61,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 831, Requested 174. Pleas [quota ]"
+  },
+  {
+   "item": 66,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 867, Requested 144. Pleas [quota ]"
+  },
+  {
+   "item": 71,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 910, Requested 209. Pleas [quota ]"
+  },
+  {
+   "item": 76,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 890, Requested 137. Pleas [quota ]"
+  },
+  {
+   "item": 80,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 809, Requested 217. Pleas [quota ]"
+  },
+  {
+   "item": 86,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 850, Requested 165. Pleas [quota ]"
+  },
+  {
+   "item": 94,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 875, Requested 163. Pleas [quota ]"
+  },
+  {
+   "item": 98,
+   "code": 429,
+   "message": "Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01j5ppb0vxfkxtcm9tc99kewa0` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 901, Requested 138. Pleas [quota ]"
+  }
+ ],
+ "groq_models": [
+  "allam-2-7b",
+  "canopylabs/orpheus-arabic-saudi",
+  "canopylabs/orpheus-v1-english",
+  "meta-llama/llama-prompt-guard-2-22m",
+  "meta-llama/llama-prompt-guard-2-86m",
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-safeguard-20b",
+  "qwen/qwen3.8-27b",
+  "whisper-large-v3",
+  "whisper-large-v3-turbo"
+ ],
+ "done": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32,
+  33,
+  34,
+  35,
+  36,
+  37,
+  38,
+  39,
+  40,
+  41,
+  42,
+  43,
+  44,
+  45,
+  46,
+  47,
+  48,
+  49,
+  50,
+  51,
+  52,
+  53,
+  54,
+  55,
+  56,
+  57,
+  58,
+  59,
+  60,
+  61,
+  62,
+  63,
+  64,
+  65,
+  66,
+  67,
+  68,
+  69,
+  70,
+  71,
+  72,
+  73,
+  74,
+  75,
+  76,
+  77,
+  78,
+  79,
+  80,
+  81,
+  82,
+  83,
+  84,
+  85,
+  86,
+  87,
+  88,
+  89,
+  90,
+  91,
+  92,
+  93,
+  94,
+  95,
+  96,
+  97,
+  98,
+  99,
+  100
+ ],
+ "model": "qwen/qwen3.8-27b",
+ "saved_this_run": 101,
+ "failed": 0,
+ "total_done": 101
+}
