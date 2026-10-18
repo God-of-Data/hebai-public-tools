@@ -34,6 +34,19 @@ def fit(bundle: bytes, recipient: str, job: str, env: dict | None = None, bpath:
         S = D["soft"]; hard = [i for i in tr if i < S["nbase"]]; n1 = sum(S["ytrue"][i] for i in hard); n0 = len(hard) - n1
         cw = {0: len(hard) / (2 * n0), 1: len(hard) / (2 * n1)}
         sw = [S["w0"][i] * cw[S["ytrue"][i]] for i in tr]; os.environ["HEBAI_CW"] = "none"
+    PW = os.environ.get("HEBAI_PWEIGHT", "")   # Fable #89: weights from this job's own training rows (after its sampling)
+    if PW:
+        assert sw is None and "soft" not in D and "parent" in D, "HEBAI_PWEIGHT needs a plain bundle with parent ids"
+        import collections
+        yt = [int(y[i]) for i in tr]; N = len(tr)
+        if PW == "pbal":   # a_i = 1/k_p; w_i = a_i * N / (2 * sum of a over the row's class)
+            k = collections.Counter(D["parent"][i] for i in tr); a = [1.0 / k[D["parent"][i]] for i in tr]
+        elif PW == "native2":   # D's balanced weights x2 on native-short-parent rows, each class renormalised to D's total
+            a = [2.0 if D["native"][i] else 1.0 for i in tr]
+        else:
+            raise SystemExit(f"unknown HEBAI_PWEIGHT {PW}")
+        A = {c: sum(x for x, t in zip(a, yt) if t == c) for c in (0, 1)}
+        sw = [x * N / (2 * A[t]) for x, t in zip(a, yt)]; os.environ["HEBAI_CW"] = "none"
     keep = D["masks"][D["job_mask"][job]] if job in D.get("job_mask", {}) else None   # Fable #79: refit on a selected term set
     m = Scorer(no_punct=np_, rare_heb=bool(np_)).fit([T[i] for i in tr], y[tr].tolist(), vocab=D["vocab"], sample_weight=sw,
                                                      **({"keep_terms": keep} if keep is not None else {}),
