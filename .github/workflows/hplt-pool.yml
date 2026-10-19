@@ -1,0 +1,23 @@
+# #93-N(b): fresh Hebrew human pool from HPLT 2.0 (pre-2022-11 crawl, <= 3 per host), age-encrypted -> branch out-hplt-pool.
+name: HPLT pool
+on:
+  workflow_dispatch:
+    inputs:
+      files: {description: "parquet files to read", default: "12"}
+      max_docs: {description: "max documents kept", default: "12000"}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q huggingface_hub pyarrow pyrage
+      - run: python hplt_pool.py ${{ inputs.files }} ${{ inputs.max_docs }}
+      - name: Save
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          git checkout --orphan out-hplt-pool; git rm -rf --cached . > /dev/null
+          git add -f out; git commit -m "hplt pool (encrypted)"; git push -f origin out-hplt-pool
