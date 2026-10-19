@@ -1,0 +1,24 @@
+# #96 step 1: herzl-like human posts from HPLT 2.0 (pre-2022-11 crawl, <= 3 per host), age-encrypted -> branch out-hplt-emo.
+name: HPLT emo
+on:
+  workflow_dispatch:
+    inputs:
+      start: {description: "first file index", default: "12"}
+      files: {description: "parquet files to read", default: "40"}
+      max_docs: {description: "max documents kept", default: "2500"}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q huggingface_hub pyarrow pyrage
+      - run: python hplt_emo.py ${{ inputs.start }} ${{ inputs.files }} ${{ inputs.max_docs }}
+      - name: Save
+        run: |
+          git config user.name "gen-bot"; git config user.email "gen-bot@users.noreply.github.com"
+          git checkout --orphan out-hplt-emo; git rm -rf --cached . > /dev/null
+          git add -f out; git commit -m "hplt emo (encrypted)"; git push -f origin out-hplt-emo
