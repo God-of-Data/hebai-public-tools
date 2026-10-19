@@ -39,8 +39,9 @@ def fit(bundle: bytes, recipient: str, job: str, env: dict | None = None, bpath:
         assert sw is None and "soft" not in D and "parent" in D, "HEBAI_PWEIGHT needs a plain bundle with parent ids"
         import collections
         yt = [int(y[i]) for i in tr]; N = len(tr)
-        if PW == "pbal":   # a_i = 1/k_p; w_i = a_i * N / (2 * sum of a over the row's class)
-            k = collections.Counter(D["parent"][i] for i in tr); a = [1.0 / k[D["parent"][i]] for i in tr]
+        if PW in ("pbal", "pbal_ai", "pbal_h"):   # a_i = 1/k_p; w_i = a_i * N / (2 * sum of a over the row's class)
+            k = collections.Counter(D["parent"][i] for i in tr)   # Fable loop R6: pbal_ai = AI rows only, pbal_h = humans only
+            a = [1.0 / k[D["parent"][i]] if PW == "pbal" or (PW == "pbal_ai") == (t == 1) else 1.0 for i, t in zip(tr, yt)]
         elif PW == "native2":   # D's balanced weights x2 on native-short-parent rows, each class renormalised to D's total
             a = [2.0 if D["native"][i] else 1.0 for i in tr]
         else:
